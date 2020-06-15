@@ -1,0 +1,6 @@
+[submodule "simple_harness/tools/maker"]
+	path = simple_harness/tools/maker
+	url = git@github.com:CMUAbstract/maker.git
+[submodule "simple_harness/ext/libcapybara"]
+	path = simple_harness/ext/libcapybara
+	url = git@github.com:CMUAbstract/libcapybara.git
