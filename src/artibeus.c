@@ -1,4 +1,26 @@
 // C file of all the basic artibeus functions
+#include <msp430.h>
+#include <stdio.h>
+
+#include <libmspware/driverlib.h>
+#include <libmspware/gpio.h>
+
+#include <libmsp/watchdog.h>
+#include <libmsp/clock.h>
+#include <libmsp/gpio.h>
+#include <libmsp/periph.h>
+#include <libmsp/sleep.h>
+#include <libmsp/mem.h>
+#include <libmsp/uart.h>
+
+#include <libio/console.h>
+
+EUSCI_B_I2C_initMasterParam params = {
+	.selectClockSource = EUSCI_B_I2C_CLOCKSOURCE_SMCLK,
+  .dataRate = EUSCI_B_I2C_SET_DATA_RATE_400KBPS,
+	.byteCounterThreshold = 0,
+  .autoSTOPGeneration = EUSCI_B_I2C_NO_AUTO_STOP
+};
 
 
 void artibeus_init() {
@@ -7,4 +29,12 @@ void artibeus_init() {
   __enable_interrupt();
   msp_clock_setup();
   INIT_CONSOLE();
+  params.i2cClk = CS_getSMCLK();
+	GPIO_setAsPeripheralModuleFunctionInputPin(
+			GPIO_PORT_P1,
+			GPIO_PIN6 + GPIO_PIN7,
+			GPIO_SECONDARY_MODULE_FUNCTION
+			);
+	EUSCI_B_I2C_initMaster(EUSCI_B0_BASE, &params);
+  __enable_interrupt();
 }
