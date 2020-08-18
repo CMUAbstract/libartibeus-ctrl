@@ -1,0 +1,9 @@
+
+ifneq ($(LIBARTIBEUS_RUN_UARTLINKS),)
+override CFLAGS += -DLIBARTIBEUS_RUN_UARTLINKS
+endif
+
+ifneq ($(LIBARTIBEUS_RUN_I2C),)
+override CFLAGS += -DLIBARTIBEUS_RUN_I2C
+endif
+
