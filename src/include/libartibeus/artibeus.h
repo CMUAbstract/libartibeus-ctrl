@@ -13,6 +13,16 @@
 #define LIBARTIBEUS_PORT_GNSS_EN 2
 #define LIBARTIBEUS_PIN_GNSS_EN 7
 
+// Debug pins!
+#define LIBARTIBEUS_PORT_DBG0 1
+#define LIBARTIBEUS_PIN_DBG0 0
+
+#define LIBARTIBEUS_PORT_DBG1 1
+#define LIBARTIBEUS_PIN_DBG1 1
+
+#define LIBARTIBEUS_PORT_DBG2 1
+#define LIBARTIBEUS_PIN_DBG2 2
+
 #endif // VERSION
 
 void artibeus_init();

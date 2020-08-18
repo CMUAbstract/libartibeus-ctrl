@@ -14,10 +14,12 @@
 #include <libmsp/uart.h>
 
 #include <libio/console.h>
+#include <libmspuartlink/uartlink.h>
 
 EUSCI_B_I2C_initMasterParam params = {
 	.selectClockSource = EUSCI_B_I2C_CLOCKSOURCE_SMCLK,
-  .dataRate = EUSCI_B_I2C_SET_DATA_RATE_400KBPS,
+  //.dataRate = EUSCI_B_I2C_SET_DATA_RATE_400KBPS,
+  .dataRate = EUSCI_B_I2C_SET_DATA_RATE_100KBPS,
 	.byteCounterThreshold = 0,
   .autoSTOPGeneration = EUSCI_B_I2C_NO_AUTO_STOP
 };
@@ -28,7 +30,10 @@ void artibeus_init() {
   msp_gpio_unlock();
   __enable_interrupt();
   msp_clock_setup();
-  INIT_CONSOLE();
+  //INIT_CONSOLE();
+  uartlink_open_tx(0);
+  uartlink_open_tx(1);
+  uartlink_open_tx(2);
   params.i2cClk = CS_getSMCLK();
 	GPIO_setAsPeripheralModuleFunctionInputPin(
 			GPIO_PORT_P1,
