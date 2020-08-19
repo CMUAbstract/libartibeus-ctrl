@@ -31,18 +31,15 @@ void artibeus_init() {
   __enable_interrupt();
   msp_clock_setup();
 #if defined(CONSOLE) && ~defined(LIBARTIBEUS_RUN_UARTLINKS)
-#pragma warning "including INIT_CONSOLE"
   INIT_CONSOLE();
 #endif
 #ifdef LIBARTIBEUS_RUN_UARTLINKS
-  #pragma warning "Will initialize uarts"
-  uartlink_open_tx(0);
-  uartlink_open_tx(1);
-  uartlink_open_tx(2);
+  uartlink_open(0);
+  uartlink_open(1);
+  uartlink_open(2);
 
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C
-  #pragma warning "Will initialize i2c"
   params.i2cClk = CS_getSMCLK();
 	GPIO_setAsPeripheralModuleFunctionInputPin(
 			GPIO_PORT_P1,
