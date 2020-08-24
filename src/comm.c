@@ -18,42 +18,67 @@
 #include "comm.h"
 #include "artibeus.h"
 
+static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
+static cmd_pkt comm_resp;
+
+int comm_format_pkt(openlst_cmd *cmd) {
+  // First things firs,t Size check
+  if (cmd->cmd_len + sizeof(cmd_header) > OPENLST_MAX_PAYLOAD_LEN) {
+    return -1;
+  }
+  // Set len-- we add 6 bytes to the cmd_len to factor in the hwid, etc
+  comm_msg.total_len = sizeof(cmd_header) + cmd->cmd_len;
+  // Set hwid
+  comm_msg.msg.header.hwid0 = cmd->hwid & 0xFF;
+  comm_msg.msg.header.hwid1 = cmd->hwid >> 8;
+  // Set seqnum
+  comm_msg.msg.header.seqnum0 = cmd->seqnum & 0xFF;
+  comm_msg.msg.header.seqnum1 = cmd->seqnum >> 8;
+  // Dest
+  comm_msg.msg.header.dest = cmd->dest;
+  // Cmd
+  comm_msg.msg.header.cmd = cmd->cmd;
+  for (size_t i = 0; i < cmd->cmd_len; i++) {
+    comm_msg.msg.msg[i] = *(cmd->payload + i);
+  }
+  return 0; 
+}
+
+uint8_t comm_decode_response(void) {
+  // Check that the initial bytes are correct
+  if (comm_resp.byte0 != ESP_BYTE0 || comm_resp.byte1 != ESP_BYTE1) {
+    return OPENLST_ERROR;
+  }
+  // TODO use the sequence number to process multiple requests in flight
+  // if (comm_seqnum_check) { return OPENLST_ERROR;}
+  
+  // TODO add a check for packet length n'at
+  return comm_resp.msg.header.cmd;
+}
 
 void  comm_send_cmd(openlst_cmd *pkt) {
-    uint8_t payload[OPENLST_PAYLOAD_LEN];
-    // Set hwid
-    payload[0] = pkt->hwid >> 8;
-    payload[1] = pkt->hwid & 0xFF;
-    // Set seqnum
-    payload[2] = pkt->seqnum >> 8;
-    payload[3] = pkt->seqnum & 0xFF;
-    // Dest
-    payload[4] = pkt->dest;
-    // Cmd
-    payload[5] = pkt->cmd;
-    for (size_t i = 0; i < pkt->command_len && i < OPENLST_PAYLOAD_LEN - 6; i++) {
-      payload[i + 6] = pkt->payload[i];
-    }
-    uartlink_send_basic(LIBMSPUARTLINK0_UART_IDX, payload, 6 + pkt->command_len);
-    return;
+  comm_format_pkt(pkt);
+  // TODO fold 9 in as a macro or something, this major number nonsense is
+  // annoying
+  uartlink_send_basic(LIBMSPUARTLINK0_UART_IDX, &comm_msg, 9 + pkt->cmd_len);
+  return;
 }
 
 unsigned comm_ack_check() {
   openlst_cmd ack_cmd;
-  ack_cmd.hwid = 0x0001;
+  ack_cmd.hwid = HWID;
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
-  //TODO figure out what this should be!!
-  ack_cmd.dest = LST_RELAY;
+  ack_cmd.dest = LST;
   ack_cmd.cmd = ACK;
-  ack_cmd.command_len = 0;
+  ack_cmd.cmd_len = 0;
   comm_send_cmd(&ack_cmd);
-  //TODO figure out how many bytes OpenLST protocol will return
-  uint8_t response[8];
   unsigned count;
   while(!count) {
-    count = uartlink_receive_basic(LIBMSPUARTLINK0_UART_IDX,response,8);
+    //TODO make a general recieve function so we don't have to predict what the
+    //packet length will be
+    count = uartlink_receive_basic(LIBMSPUARTLINK0_UART_IDX,&comm_resp,9);
   }
-  //TODO implement a function that checks for ACK vs NACK
+  uint8_t resp_cmd = comm_decode_response();
   return count;
 }

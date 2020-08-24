@@ -27,16 +27,66 @@
 #define ASCII 0x11
 #define AES_KEY_SIZE 16
 
-#define OPENLST_PAYLOAD_LEN 32
+#define OPENLST_MAX_PAYLOAD_LEN 32
+#define OPENLST_ERROR 0X00
 
-typedef struct __attribute__((__packed__)) openlst_cmd_ {
+#define ESP_BYTE0 34
+#define ESP_BYTE1 105
+
+#define HWID 0x0002
+
+/*
+ * @brief: Describes the program level details for a packet. We'll handle the
+ * secret sauce bytes elsewhere
+ * @details: hwid is programmed in the bootloader
+ *           seqnum increments for each
+ *           pkt in a series associated with a single cmd
+ *           dest indicates either the radio or rf frontend
+ *           cmd is one of the commands listed above
+ *           cmd_len is the length in bytes of the command payload NOT INCLUDING
+ *           THE COMMAND BYTE
+ */
+typedef struct openlst_cmd_ {
   uint16_t hwid;
   uint16_t seqnum;
   uint8_t dest;
-  uint8_t command_len;
   uint8_t cmd;
+  uint8_t cmd_len;
   uint8_t *payload;
 } openlst_cmd;
+
+//TODO: MAKE THE FOLLOWING TYPEDEFS PRIVATE TO COMM.C
+/*
+ * @brief: struct that drills down into the command header for a packet to make
+ * processing packets sane
+ */
+typedef struct cmd_header_ {
+  uint8_t hwid0;
+  uint8_t hwid1;
+  uint8_t seqnum0;
+  uint8_t seqnum1;
+  uint8_t dest;
+  uint8_t cmd;
+} cmd_header;
+
+/*
+ * @brief: struct to happily smush together command header and data
+ */
+ typedef struct __attribute__ ((__packed__)) cmd_msg_ {
+   cmd_header header;
+   uint8_t msg[OPENLST_MAX_PAYLOAD_LEN];
+} cmd_msg;
+
+/*
+ * @brief: just a type for when we transfer the cmd into a formatted packet
+ * that's ready to be transmitted
+ */
+typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
+  uint8_t byte0;
+  uint8_t byte1;
+  uint8_t total_len;
+  cmd_msg msg;
+} cmd_pkt;
 
 unsigned comm_ack_check(void);
 
