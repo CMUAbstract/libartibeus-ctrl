@@ -7,3 +7,6 @@ ifneq ($(LIBARTIBEUS_RUN_I2C),)
 override CFLAGS += -DLIBARTIBEUS_RUN_I2C
 endif
 
+ifneq ($(LIBARTIBEUS_HWID),)
+override CFLAGS += -DLIBARTIBEUS_HWID=$(LIBARTIBEUS_HWID)
+endif

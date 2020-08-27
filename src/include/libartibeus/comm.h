@@ -27,13 +27,17 @@
 #define ASCII 0x11
 #define AES_KEY_SIZE 16
 
-#define OPENLST_MAX_PAYLOAD_LEN 32
+#define OPENLST_MAX_PAYLOAD_LEN 240
 #define OPENLST_ERROR 0X00
 
 #define ESP_BYTE0 34
 #define ESP_BYTE1 105
 
-#define HWID 0x0002
+#ifndef LIBARTIBEUS_HWID
+#error "No HWID defined! Set LIBARTIBEUS_HWID"
+#else
+#define HWID LIBARTIBEUS_HWID
+#endif
 
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
@@ -89,5 +93,6 @@ typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
 } cmd_pkt;
 
 unsigned comm_ack_check(void);
+void comm_rf_check(void);
 
 #endif //_LIBARTIBEUS_COMM_H_
