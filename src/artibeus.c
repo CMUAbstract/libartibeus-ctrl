@@ -15,6 +15,7 @@
 
 #include <libio/console.h>
 #include <libmspuartlink/uartlink.h>
+#include "artibeus.h"
 
 EUSCI_B_I2C_initMasterParam params = {
 	.selectClockSource = EUSCI_B_I2C_CLOCKSOURCE_SMCLK,
@@ -26,7 +27,11 @@ EUSCI_B_I2C_initMasterParam params = {
 
 
 void artibeus_init() {
+#ifdef CONFIG_WATCHDOG
+  msp_watchdog_enable(CONFIG_WDT_BITS);
+#else
   msp_watchdog_disable();
+#endif
   msp_gpio_unlock();
   __enable_interrupt();
   msp_clock_setup();
@@ -38,6 +43,50 @@ void artibeus_init() {
   uartlink_open(1);
   uartlink_open(2);
 
+#endif
+#ifdef LIBARTIBEUS_RUN_I2C
+  params.i2cClk = CS_getSMCLK();
+	GPIO_setAsPeripheralModuleFunctionInputPin(
+			GPIO_PORT_P1,
+			GPIO_PIN6 + GPIO_PIN7,
+			GPIO_SECONDARY_MODULE_FUNCTION
+			);
+	EUSCI_B_I2C_initMaster(EUSCI_B0_BASE, &params);
+#endif
+  __enable_interrupt();
+}
+
+static __nv uint8_t libartibeus_done_burn = 0;
+
+void artibeus_burn_wire() {
+  if (libartibeus_done_burn) {
+    return;
+  }
+  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, DIR) |= LIBARTIBEUS_PIN_BURN_WIRE;
+  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, OUT) |= LIBARTIBEUS_PIN_BURN_WIRE;
+  __delay_cycles(LIBARTIBEUS_BURN_WIRE_CYCLES);
+  libartibeus_done_burn = 1;
+  return;
+}
+
+
+void artibeus_first_init() {
+#ifdef CONFIG_WATCHDOG
+  msp_watchdog_enable(CONFIG_WDT_BITS);
+#else
+  msp_watchdog_disable();
+#endif
+  msp_gpio_unlock();
+  __enable_interrupt();
+  msp_clock_setup();
+  artibeus_burn_wire();
+#if defined(CONSOLE) && ~defined(LIBARTIBEUS_RUN_UARTLINKS)
+  INIT_CONSOLE();
+#endif
+#ifdef LIBARTIBEUS_RUN_UARTLINKS
+  uartlink_open(0);
+  uartlink_open(1);
+  uartlink_open(2);
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C
   params.i2cClk = CS_getSMCLK();
