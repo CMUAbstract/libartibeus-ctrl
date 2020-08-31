@@ -34,6 +34,28 @@
 
 #endif // VERSION
 
+// Couple of definitions to enable/disable the other boards
+#define EXP_ENABLE do{\
+  GPIO(LIBARTIBEUS_PORT_EXP_EN, DIR) |= BIT(LIBARTIBEUS_PIN_EXP_EN); \
+  GPIO(LIBARTIBEUS_PORT_EXP_EN, OUT) |= BIT(LIBARTIBEUS_PIN_EXP_EN);} while(0); \
+
+#define EXP_DISABLE do{\
+  GPIO(LIBARTIBEUS_PORT_EXP_EN, OUT) &= ~BIT(LIBARTIBEUS_PIN_EXP_EN);} while(0);
+
+#define GNSS_ENABLE do{\
+  GPIO(LIBARTIBEUS_PORT_GNSS_EN, DIR) |= BIT(LIBARTIBEUS_PIN_GNSS_EN); \
+  GPIO(LIBARTIBEUS_PORT_GNSS_EN, OUT) |= BIT(LIBARTIBEUS_PIN_GNSS_EN);} while(0); \
+
+#define GNSS_DISABLE do{\
+  GPIO(LIBARTIBEUS_PORT_GNSS_EN, OUT) &= ~BIT(LIBARTIBEUS_PIN_GNSS_EN);} while(0);
+
+#define COMM_ENABLE do{\
+  GPIO(LIBARTIBEUS_PORT_COMM_EN, DIR) |= BIT(LIBARTIBEUS_PIN_COMM_EN); \
+  GPIO(LIBARTIBEUS_PORT_COMM_EN, OUT) |= BIT(LIBARTIBEUS_PIN_COMM_EN);} while(0); \
+
+#define COMM_DISABLE do{\
+  GPIO(LIBARTIBEUS_PORT_COMM_EN, OUT) &= ~BIT(LIBARTIBEUS_PIN_COMM_EN);} while(0);
+
 // This needs to be less than 1 word to guarantee that we can write to it in one
 // go. We're using it as part of our recovery strategy
 typedef enum artibeus_mode_ {
@@ -42,7 +64,8 @@ typedef enum artibeus_mode_ {
   GNSS,
   COMM,
   EXPT,
-  XFER
+  XFER,
+  SLEEP
 } artibeus_mode;
 
 
