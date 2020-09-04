@@ -58,13 +58,15 @@ void artibeus_init() {
 
 static __nv uint8_t libartibeus_done_burn = 0;
 
-void artibeus_burn_wire() {
+static void artibeus_burn_wire() {
   if (libartibeus_done_burn) {
     return;
   }
-  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, DIR) |= LIBARTIBEUS_PIN_BURN_WIRE;
-  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, OUT) |= LIBARTIBEUS_PIN_BURN_WIRE;
+  //LOG("Starting burn for real!\r\n");
+  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, DIR) |= BIT(LIBARTIBEUS_PIN_BURN_WIRE);
+  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, OUT) |= BIT(LIBARTIBEUS_PIN_BURN_WIRE);
   __delay_cycles(LIBARTIBEUS_BURN_WIRE_CYCLES);
+  GPIO(LIBARTIBEUS_PORT_BURN_WIRE, OUT) &= ~BIT(LIBARTIBEUS_PIN_BURN_WIRE);
   libartibeus_done_burn = 1;
   return;
 }
@@ -82,6 +84,9 @@ void artibeus_first_init() {
   artibeus_burn_wire();
 #if defined(CONSOLE) && ~defined(LIBARTIBEUS_RUN_UARTLINKS)
   INIT_CONSOLE();
+  if (libartibeus_done_burn) {
+    PRINTF("done burn inside!\r\n");
+  }
 #endif
 #ifdef LIBARTIBEUS_RUN_UARTLINKS
   uartlink_open(0);

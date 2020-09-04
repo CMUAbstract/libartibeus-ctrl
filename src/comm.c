@@ -18,7 +18,7 @@
 #include "comm.h"
 #include "artibeus.h"
 
-#define COMM_TEST_LEN 16
+#define COMM_TEST_LEN 64
 
 static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt comm_resp;
@@ -89,10 +89,11 @@ unsigned comm_ack_check() {
 void comm_rf_check() {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = HWID;
+  //ack_cmd.hwid = 0x0001;
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
   ack_cmd.dest = LST_RELAY;
-  ack_cmd.cmd = ACK;
+  ack_cmd.cmd = ASCII;
   ack_cmd.cmd_len = COMM_TEST_LEN;
   uint8_t msg_test[COMM_TEST_LEN];
   ack_cmd.payload = msg_test;
@@ -103,3 +104,10 @@ void comm_rf_check() {
   return;
 }
 
+
+int comm_tx(uint8_t *data, size_t len) {
+  // Pack up data into 251B chunks with correct header/cmd stuff
+  size_t chunks = len >> 8;
+  // Wait to receive ack
+  return 0;
+}
