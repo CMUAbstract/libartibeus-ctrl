@@ -42,7 +42,6 @@ void artibeus_init() {
   uartlink_open(0);
   uartlink_open(1);
   uartlink_open(2);
-
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C
   params.i2cClk = CS_getSMCLK();
@@ -81,6 +80,16 @@ void artibeus_first_init() {
   msp_gpio_unlock();
   __enable_interrupt();
   msp_clock_setup();
+  // We use DBG1 as a check if we've "launched" yet.
+  P1DIR &= ~BIT1;
+  P1REN |= BIT1;
+  P1OUT |= BIT1;
+  while(1) {
+    if (P1IN & (BIT1)) {
+      break;
+    }
+  }
+
   artibeus_burn_wire();
 #if defined(CONSOLE) && ~defined(LIBARTIBEUS_RUN_UARTLINKS)
   INIT_CONSOLE();
