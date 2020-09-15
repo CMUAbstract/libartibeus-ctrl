@@ -104,6 +104,29 @@ void comm_rf_check() {
   return;
 }
 
+void comm_transmit_pkt(char *pkt, uint16_t len) {
+  openlst_cmd ascii_cmd;
+  ascii_cmd.hwid = HWID;
+  ascii_cmd.dest = LST_RELAY;
+  ascii_cmd.cmd = ASCII;
+  uint8_t seqnum =0;
+  uint16_t index = 0;
+  while(len > OPENLST_MAX_PAYLOAD_LEN) {
+    ascii_cmd.seqnum = seqnum;
+    ascii_cmd.cmd_len = OPENLST_MAX_PAYLOAD_LEN ;
+    ascii_cmd.payload = pkt + (len - OPENLST_MAX_PAYLOAD_LEN); 
+    comm_send_cmd(&ascii_cmd);
+    len -= OPENLST_MAX_PAYLOAD_LEN;
+    index += OPENLST_MAX_PAYLOAD_LEN;
+    seqnum++;
+  }
+  ascii_cmd.seqnum = seqnum;
+  ascii_cmd.cmd_len = len;
+  ascii_cmd.payload = pkt + index; 
+  comm_send_cmd(&ascii_cmd);
+  return;
+}
+
 
 int comm_tx(uint8_t *data, size_t len) {
   // Pack up data into 251B chunks with correct header/cmd stuff

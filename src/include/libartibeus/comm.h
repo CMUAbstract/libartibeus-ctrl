@@ -94,5 +94,7 @@ typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
 
 unsigned comm_ack_check(void);
 void comm_rf_check(void);
+void comm_transmit_pkt(char *pkt, uint16_t len);
+
 
 #endif //_LIBARTIBEUS_COMM_H_
