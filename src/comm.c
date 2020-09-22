@@ -112,6 +112,9 @@ void comm_transmit_pkt(char *pkt, uint16_t len) {
   uint8_t seqnum =0;
   uint16_t index = 0;
   while(len > OPENLST_MAX_PAYLOAD_LEN) {
+    // Pet watchdog
+    msp_watchdog_kick();
+    //TODO add watchdog kick
     ascii_cmd.seqnum = seqnum;
     ascii_cmd.cmd_len = OPENLST_MAX_PAYLOAD_LEN ;
     ascii_cmd.payload = pkt + (len - OPENLST_MAX_PAYLOAD_LEN); 
