@@ -24,6 +24,11 @@
 #define BOOTLOADER_ACK 0x01
 #define BOOTLOADER_NACK 0x0f
 
+#define EXPT_LISTENING 0x07
+#define EXPT_WAKE 0x27
+
+#define RF_KILL  0x3F
+
 #define ASCII 0x11
 #define AES_KEY_SIZE 16
 
@@ -38,6 +43,12 @@
 #else
 #define HWID LIBARTIBEUS_HWID
 #endif
+
+#define MAX_KILL_COUNT 5
+
+extern uint8_t RF_KILL_KEYS[16];
+extern uint8_t EXPT_WAKE_KEYS[8];
+
 
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
@@ -80,7 +91,6 @@ typedef struct cmd_header_ {
    cmd_header header;
    uint8_t msg[OPENLST_MAX_PAYLOAD_LEN];
 } cmd_msg;
-
 /*
  * @brief: just a type for when we transfer the cmd into a formatted packet
  * that's ready to be transmitted
@@ -95,6 +105,6 @@ typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
 unsigned comm_ack_check(void);
 void comm_rf_check(void);
 void comm_transmit_pkt(char *pkt, uint16_t len);
-
+void comm_transmit_ready(void);
 
 #endif //_LIBARTIBEUS_COMM_H_

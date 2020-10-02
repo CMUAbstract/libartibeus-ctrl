@@ -18,10 +18,14 @@
 #include "comm.h"
 #include "artibeus.h"
 
-#define COMM_TEST_LEN 64
+#define COMM_TEST_LEN 128
 
 static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt comm_resp;
+
+ __nv uint8_t RF_KILL_KEYS[16] =
+ {'F','O','R','B','E', 'S','a','v','e','P','A','1', '5' ,'2' ,'1','3',};
+ __nv uint8_t EXPT_WAKE_KEYS[8] = {'S','c','o','t','t','y','T','A'};
 
 int comm_format_pkt(openlst_cmd *cmd) {
   // First things firs,t Size check
@@ -71,17 +75,18 @@ unsigned comm_ack_check() {
   ack_cmd.hwid = HWID;
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
-  ack_cmd.dest = LST;
+  //ack_cmd.dest = LST;
+  ack_cmd.dest = LST_RELAY;
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   comm_send_cmd(&ack_cmd);
   unsigned count;
-  while(!count) {
+  /*while(!count) {
     //TODO make a general recieve function so we don't have to predict what the
     //packet length will be
     count = uartlink_receive_basic(LIBMSPUARTLINK0_UART_IDX,&comm_resp,9);
   }
-  uint8_t resp_cmd = comm_decode_response();
+  uint8_t resp_cmd = comm_decode_response();*/
   return count;
 }
 
@@ -114,7 +119,6 @@ void comm_transmit_pkt(char *pkt, uint16_t len) {
   while(len > OPENLST_MAX_PAYLOAD_LEN) {
     // Pet watchdog
     msp_watchdog_kick();
-    //TODO add watchdog kick
     ascii_cmd.seqnum = seqnum;
     ascii_cmd.cmd_len = OPENLST_MAX_PAYLOAD_LEN ;
     ascii_cmd.payload = pkt + (len - OPENLST_MAX_PAYLOAD_LEN); 
@@ -131,9 +135,17 @@ void comm_transmit_pkt(char *pkt, uint16_t len) {
 }
 
 
-int comm_tx(uint8_t *data, size_t len) {
-  // Pack up data into 251B chunks with correct header/cmd stuff
-  size_t chunks = len >> 8;
-  // Wait to receive ack
-  return 0;
+void comm_transmit_ready() {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = HWID;
+  ack_cmd.seqnum = 0x0000;
+  ack_cmd.dest = LST_RELAY;
+  ack_cmd.cmd = EXPT_LISTENING;
+  ack_cmd.cmd_len = 1;
+  uint8_t msg_test[1];
+  ack_cmd.payload = msg_test;
+  // magic number
+  msg_test[0] = 0x64;
+  comm_send_cmd(&ack_cmd);
+  return;
 }
