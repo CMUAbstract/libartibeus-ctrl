@@ -23,8 +23,10 @@
 static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt comm_resp;
 
- __nv uint8_t RF_KILL_KEYS[16] =
- {'F','O','R','B','E', 'S','a','v','e','P','A','1', '5' ,'2' ,'1','3',};
+static cmd_pkt expt_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
+static cmd_pkt expt_resp;
+
+ __nv uint8_t RF_KILL_KEYS[16] ={'F','O','R','B','E', 'S','a','v','e','P','A','1', '5' ,'2' ,'1','3',};
  __nv uint8_t EXPT_WAKE_KEYS[8] = {'S','c','o','t','t','y','T','A'};
 
 int comm_format_pkt(openlst_cmd *cmd) {
@@ -50,6 +52,29 @@ int comm_format_pkt(openlst_cmd *cmd) {
   return 0;
 }
 
+int expt_format_pkt(openlst_cmd *cmd) {
+  // First things firs,t Size check
+  if (cmd->cmd_len + sizeof(cmd_header) > OPENLST_MAX_PAYLOAD_LEN) {
+    return -1;
+  }
+  // Set len-- we add 6 bytes to the cmd_len to factor in the hwid, etc
+  expt_msg.total_len = sizeof(cmd_header) + cmd->cmd_len;
+  // Set hwid
+  expt_msg.msg.header.hwid0 = cmd->hwid & 0xFF;
+  expt_msg.msg.header.hwid1 = cmd->hwid >> 8;
+  // Set seqnum
+  expt_msg.msg.header.seqnum0 = cmd->seqnum & 0xFF;
+  expt_msg.msg.header.seqnum1 = cmd->seqnum >> 8;
+  // Dest
+  expt_msg.msg.header.dest = cmd->dest;
+  // Cmd
+  expt_msg.msg.header.cmd = cmd->cmd;
+  for (size_t i = 0; i < cmd->cmd_len; i++) {
+    expt_msg.msg.msg[i] = *(cmd->payload + i);
+  }
+  return 0;
+}
+
 uint8_t comm_decode_response(void) {
   // Check that the initial bytes are correct
   if (comm_resp.byte0 != ESP_BYTE0 || comm_resp.byte1 != ESP_BYTE1) {
@@ -67,6 +92,14 @@ void  comm_send_cmd(openlst_cmd *pkt) {
   // TODO fold 9 in as a macro or something, this major number nonsense is
   // annoying
   uartlink_send_basic(LIBMSPUARTLINK0_UART_IDX, &comm_msg, 9 + pkt->cmd_len);
+  return;
+}
+
+void  expt_send_cmd(openlst_cmd *pkt) {
+  expt_format_pkt(pkt);
+  // TODO fold 9 in as a macro or something, this major number nonsense is
+  // annoying
+  uartlink_send_basic(LIBMSPUARTLINK1_UART_IDX, &expt_msg, 9 + pkt->cmd_len);
   return;
 }
 
@@ -90,6 +123,29 @@ unsigned comm_ack_check() {
   return count;
 }
 
+unsigned expt_ack_check() {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = HWID;
+  //TODO make this a global counter
+  ack_cmd.seqnum = 0x0000;
+  ack_cmd.dest = LST;
+  ack_cmd.cmd = ACK;
+  ack_cmd.cmd_len = 0;
+  uartlink_open_tx(1);
+  expt_send_cmd(&ack_cmd);
+  uartlink_close(1);
+  uartlink_open_rx(1);
+  unsigned count = 0;
+  count = uartlink_receive_basic(LIBMSPUARTLINK1_UART_IDX,&expt_resp,9);
+  uartlink_close(1);
+  /*while(!count) {
+    //TODO make a general recieve function so we don't have to predict what the
+    //packet length will be
+    count = uartlink_receive_basic(LIBMSPUARTLINK1_UART_IDX,&expt_resp,9);
+  }*/
+  //uint8_t resp_cmd = comm_decode_response();
+  return count;
+}
 
 void comm_rf_check() {
   openlst_cmd ack_cmd;

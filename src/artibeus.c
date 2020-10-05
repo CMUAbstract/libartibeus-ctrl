@@ -33,18 +33,14 @@ void artibeus_init() {
   msp_watchdog_disable();
 #endif
   msp_gpio_unlock();
-  P1OUT |= BIT1;
-  P1DIR |= BIT1;
   __enable_interrupt();
-  P1OUT |= BIT2;
-  P1DIR |= BIT2;
   msp_clock_setup();
 #if defined(CONSOLE) && ~defined(LIBARTIBEUS_RUN_UARTLINKS)
   INIT_CONSOLE();
 #endif
 #ifdef LIBARTIBEUS_RUN_UARTLINKS
   uartlink_open(0);
-  uartlink_open(1);
+  //uartlink_open(1);
   uartlink_open(2);
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C

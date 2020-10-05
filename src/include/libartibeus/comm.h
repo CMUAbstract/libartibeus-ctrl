@@ -46,10 +46,6 @@
 
 #define MAX_KILL_COUNT 5
 
-extern uint8_t RF_KILL_KEYS[16];
-extern uint8_t EXPT_WAKE_KEYS[8];
-
-
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
  * secret sauce bytes elsewhere
@@ -102,9 +98,14 @@ typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
   cmd_msg msg;
 } cmd_pkt;
 
+extern uint8_t RF_KILL_KEYS[16];
+extern uint8_t EXPT_WAKE_KEYS[8];
+
 unsigned comm_ack_check(void);
 void comm_rf_check(void);
 void comm_transmit_pkt(char *pkt, uint16_t len);
 void comm_transmit_ready(void);
+
+unsigned expt_ack_check(void);
 
 #endif //_LIBARTIBEUS_COMM_H_
