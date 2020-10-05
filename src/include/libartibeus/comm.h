@@ -14,6 +14,7 @@
 #define CALLSIGN 0x1b
 #define GET_TELEM 0x17
 #define TELEM 0x18
+#define SCORE 0x57
 
 #define GET_TIME 0x13
 #define SET_TIME 0x14
@@ -23,9 +24,11 @@
 #define BOOTLOADER_WRITE_PAGE 0x02
 #define BOOTLOADER_ACK 0x01
 #define BOOTLOADER_NACK 0x0f
+#define BOOTLOADER_JUMP 0x0b
 
 #define EXPT_LISTENING 0x07
 #define EXPT_WAKE 0x27
+#define EXPT_DONE 0x28
 
 #define RF_KILL  0x3F
 
@@ -107,5 +110,6 @@ void comm_transmit_pkt(char *pkt, uint16_t len);
 void comm_transmit_ready(void);
 
 unsigned expt_ack_check(void);
-
+void expt_write_program();
+void expt_write_jump();
 #endif //_LIBARTIBEUS_COMM_H_
