@@ -26,8 +26,8 @@ static cmd_pkt comm_resp;
 static cmd_pkt expt_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt expt_resp;
 
- __nv uint8_t RF_KILL_KEYS[16] ={'F','O','R','B','E', 'S','a','v','e','P','A','1', '5' ,'2' ,'1','3',};
- __nv uint8_t EXPT_WAKE_KEYS[8] = {'S','c','o','t','t','y','T','A'};
+ __nv uint8_t RF_KILL_KEYS[16] ={'S','T','O','P',' ','b','r','o','a','d','C','A','S','T','!','!',};
+ __nv uint8_t EXPT_WAKE_KEYS[8] = {'W','a','K','e','U','p','T','A'};
 
 int comm_format_pkt(openlst_cmd *cmd) {
   // First things firs,t Size check
