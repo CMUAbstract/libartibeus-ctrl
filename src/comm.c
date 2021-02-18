@@ -218,7 +218,7 @@ void expt_write_jump() {
   expt_send_cmd(&write_pg_cmd);
 }
 
-#if 0
+#if 1
 #define  BYTES_PER_CMD 129
 const uint8_t SUBPAGE_00[BYTES_PER_CMD] = {
  0x00,
@@ -629,14 +629,14 @@ void expt_write_program() {
   expt_write_page(SUBPAGE_00);
   uartlink_close(1);
   uartlink_open_rx(1);
+  __delay_cycles(8000000);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -646,12 +646,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -661,12 +661,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -676,12 +676,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -691,12 +691,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -706,12 +706,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -721,12 +721,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -736,12 +736,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -751,12 +751,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -766,12 +766,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   // Start
   uartlink_close(1);
   uartlink_open_tx(1);
@@ -781,12 +781,12 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   // End
-  __delay_cycles(800000);
+  __delay_cycles(8000000);
   uartlink_close(1);
   uartlink_open_tx(1);
   expt_write_jump();
@@ -794,9 +794,9 @@ void expt_write_program() {
   uartlink_open_rx(1);
   count = uartlink_receive_basic(1,msg ,0x7);
   if (count == 0x7) {
-    P1OUT |= BIT0;
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
+    P1OUT |= BIT1;
+    P1DIR |= BIT1;
+    P1OUT &= ~BIT1;
   }
   uartlink_close(1);
   return;
