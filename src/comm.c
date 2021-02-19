@@ -59,6 +59,7 @@ int expt_format_pkt(openlst_cmd *cmd) {
   }
   // Set len-- we add 6 bytes to the cmd_len to factor in the hwid, etc
   expt_msg.total_len = sizeof(cmd_header) + cmd->cmd_len;
+  cmd->cmd_len += sizeof(cmd_header);//TODO check if comm pakets need this!!!
   // Set hwid
   expt_msg.msg.header.hwid0 = cmd->hwid & 0xFF;
   expt_msg.msg.header.hwid1 = cmd->hwid >> 8;
@@ -130,7 +131,7 @@ unsigned expt_ack_check() {
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
   ack_cmd.dest = LST;
-  ack_cmd.cmd = ACK;
+  ack_cmd.cmd = BOOTLOADER_ACK;
   ack_cmd.cmd_len = 0;
   uartlink_open_tx(1);
   expt_send_cmd(&ack_cmd);
