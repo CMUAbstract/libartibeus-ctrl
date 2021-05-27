@@ -14,6 +14,7 @@
 #define CALLSIGN 0x1b
 #define GET_TELEM 0x17
 #define TELEM 0x18
+#define SET_TIME 0x14
 #define SCORE 0x57
 
 #define GET_TIME 0x13
@@ -112,4 +113,5 @@ void comm_transmit_ready(void);
 unsigned expt_ack_check(void);
 void expt_write_program();
 void expt_write_jump();
+void expt_set_time(uint8_t *);
 #endif //_LIBARTIBEUS_COMM_H_

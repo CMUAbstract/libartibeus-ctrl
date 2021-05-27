@@ -219,6 +219,17 @@ void expt_write_jump() {
   expt_send_cmd(&write_pg_cmd);
 }
 
+void expt_set_time(uint8_t *time) {
+  openlst_cmd time_cmd;
+  time_cmd.hwid = HWID;
+  time_cmd.seqnum = 0x0000;
+  time_cmd.dest = LST;
+  time_cmd.cmd = SET_TIME;
+  time_cmd.cmd_len = 0x8; // Total of 0xE
+  time_cmd.payload = time;
+  expt_send_cmd(&time_cmd);
+}
+
 #if 1
 #define  BYTES_PER_CMD 129
 const uint8_t SUBPAGE_00[BYTES_PER_CMD] = {
