@@ -39,8 +39,9 @@ void artibeus_init() {
   INIT_CONSOLE();
 #endif
 #ifdef LIBARTIBEUS_RUN_UARTLINKS
+  // Configure and open
   uartlink_open(0);
-  //uartlink_open(1);
+  uartlink_open(1);
   uartlink_open(2);
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C

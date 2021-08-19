@@ -68,6 +68,8 @@
   GPIO(LIBARTIBEUS_PORT_GNSS_nRST, DIR) &= ~BIT(LIBARTIBEUS_PIN_GNSS_nRST);\
 }while(0);
 
+
+
 // This needs to be less than 1 word to guarantee that we can write to it in one
 // go. We're using it as part of our recovery strategy
 typedef enum artibeus_mode_ {
@@ -77,9 +79,11 @@ typedef enum artibeus_mode_ {
   COMM,
   EXPT,
   XFER,
+  RECORD_TELEM,
+  GET_UART1,
+  GET_UART2,
   SLEEP
 } artibeus_mode;
-
 
 void artibeus_init();
 void artibeus_first_init();

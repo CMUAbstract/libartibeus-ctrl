@@ -2,7 +2,8 @@ LIB = libartibeus
 
 OBJECTS = \
 	artibeus.o \
-  comm.o
+  comm.o\
+  query.o
 
 override SRC_ROOT = ../../src
 
