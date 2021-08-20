@@ -62,12 +62,12 @@
  *           cmd_len is the length in bytes of the command payload NOT INCLUDING
  *           THE COMMAND BYTE
  */
-typedef struct openlst_cmd_ {
+typedef struct __attribute__((__packed__)) openlst_cmd_ {
+  uint8_t cmd_len;
   uint16_t hwid;
   uint16_t seqnum;
   uint8_t dest;
   uint8_t cmd;
-  uint8_t cmd_len;
   uint8_t *payload;
 } openlst_cmd;
 

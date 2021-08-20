@@ -21,11 +21,18 @@
 __nv buffer_t UART1_BUFFERS[UART1_BUFFER_CNT];
 __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 
-
+#ifndef BIT_FLIP
+#define BIT_FLIP(port,bit) \
+	P##port##OUT |= BIT##bit; \
+	P##port##DIR |= BIT##bit; \
+	P##port##OUT &= ~BIT##bit;
+#endif
 int process_uart0() {
   // Check for active messages
   for (int i = 0; i < UART0_BUFFER_CNT; i++) {
     if (UART0_BUFFERS[i].active == 0 || UART0_BUFFERS[i].complete != COMPLETE) {
+      char msg[8] = "No pkt\r\n";
+      uartlink_send_basic(1,msg,8);
       continue;
     }
     // if there is a message, check if it's for us
@@ -33,14 +40,27 @@ int process_uart0() {
     if (UART0_BUFFERS[i].pkt.pkt.hwid == HWID_CTRL) {
       // If it is, process it
       PRINTF("Got pkt!");
-      //TODO move:
-      // Kill keys here
-      // Score repeat here
-      // Send telem here
+      char msg[9] = "Got pkt\r\n";
+      uartlink_send_basic(1,msg,9);
+       switch(UART0_BUFFERS[i].pkt.pkt.cmd) {
+        case ACK:
+          break;
+        case GET_TELEM:
+          break;
+        case ASCII:
+          // Kill keys here
+          // Score repeat here
+          break;
+        default:
+          // Command not supported
+          break;
+      }
     }
     else {
+      EXP_ENABLE;
       // If it's not, send it to the experiment board
       expt_send_cmd(&(UART0_BUFFERS[i].pkt.pkt));
+      //TODO figure out when to disable
     }
     UART0_BUFFERS[i].complete = 0;
     UART0_BUFFERS[i].active = 0;
@@ -63,8 +83,10 @@ int process_uart1() {
       // Get time
     }
     else {
+      COMM_ENABLE;
       // If it's not, send it to the comm board
       comm_send_cmd(&(UART1_BUFFERS[i].pkt.pkt));
+      //TODO Figure out when to disable, may need a delay before or afte
     }
   }
   return 0;
@@ -79,8 +101,11 @@ int handle_progress_uart0(uint8_t data) {
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
   static buffer_num = -1;
+  BIT_FLIP(1,2);
   switch(progress) {
     case wait_esp0: // Waiting for start1
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
       prog_counter = 0;
       if (data == ESP_BYTE0) {
         progress = wait_esp1;
@@ -88,6 +113,9 @@ int handle_progress_uart0(uint8_t data) {
       break;
     case wait_esp1: // Waiting for start2
       prog_counter = 0;
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
       if (data == ESP_BYTE1) {
         prog_len = 0;
         progress = wait_len;
@@ -96,6 +124,10 @@ int handle_progress_uart0(uint8_t data) {
       }
       break;
     case wait_len:
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
       prog_len = data;
       // Give up if packet is too long or too short
       if (prog_len > UARTLINK_MAX_PAYLOAD_SIZE || prog_len < 6) {
@@ -117,7 +149,12 @@ int handle_progress_uart0(uint8_t data) {
       progress = receive_data;
       break;
     case receive_data:
-      buffers[buffer_num].pkt.msg[prog_len] = data;
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      BIT_FLIP(1,2);
+      buffers[buffer_num].pkt.msg[prog_len+1] = data;
       prog_len++;
       if (prog_counter >= prog_len) {
         //Mark as complete
@@ -183,7 +220,7 @@ int handle_progress_uart1(uint8_t data) {
       progress = receive_data;
       break;
     case receive_data:
-      buffers[buffer_num].pkt.msg[prog_len] = data;
+      buffers[buffer_num].pkt.msg[prog_len+1] = data;
       prog_len++;
       if (prog_counter >= prog_len) {
         //Mark as complete
