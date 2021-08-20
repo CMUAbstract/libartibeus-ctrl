@@ -69,6 +69,11 @@
 }while(0);
 
 
+#ifndef LIBARTIBEUS_CTRL_HWID
+#error "No HWID defined! Set LIBARTIBEUS_CTRL_HWID"
+#else
+#define HWID_CTRL LIBARTIBEUS_CTRL_HWID
+#endif
 
 // This needs to be less than 1 word to guarantee that we can write to it in one
 // go. We're using it as part of our recovery strategy

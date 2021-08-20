@@ -43,6 +43,7 @@ void artibeus_init() {
   uartlink_open(0);
   uartlink_open(1);
   uartlink_open(2);
+  //TODO uartlink buffer cleanup!
 #endif
 #ifdef LIBARTIBEUS_RUN_I2C
   params.i2cClk = CS_getSMCLK();

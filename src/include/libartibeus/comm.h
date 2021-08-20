@@ -36,19 +36,20 @@
 #define ASCII 0x11
 #define AES_KEY_SIZE 16
 
-#define OPENLST_MAX_PAYLOAD_LEN 240
+#define OPENLST_MAX_PAYLOAD_LEN 251
 #define OPENLST_ERROR 0X00
 
 #define ESP_BYTE0 34
 #define ESP_BYTE1 105
 
-#ifndef LIBARTIBEUS_HWID
-#error "No HWID defined! Set LIBARTIBEUS_HWID"
+#ifndef LIBARTIBEUS_COMM_HWID
+#error "No HWID defined! Set LIBARTIBEUS_COMM_HWID"
 #else
-#define HWID LIBARTIBEUS_HWID
+#define HWID LIBARTIBEUS_COMM_HWID
 #endif
 
 #define MAX_KILL_COUNT 5
+#define PRE_HEADER_LEN 3
 
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
