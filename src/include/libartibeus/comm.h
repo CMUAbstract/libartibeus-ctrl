@@ -51,6 +51,9 @@
 #define MAX_KILL_COUNT 5
 #define PRE_HEADER_LEN 3
 
+// Offset from very beginning of real packet (with *i<len> bytes too)
+#define HWID_OFFSET 4
+#define CMD_OFFSET 8
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
  * secret sauce bytes elsewhere
@@ -63,9 +66,9 @@
  *           THE COMMAND BYTE
  */
 typedef struct __attribute__((__packed__)) openlst_cmd_ {
-  uint8_t cmd_len;
   uint16_t hwid;
   uint16_t seqnum;
+  uint8_t cmd_len;
   uint8_t dest;
   uint8_t cmd;
   uint8_t *payload;
@@ -103,6 +106,18 @@ typedef struct __attribute__ ((__packed__)) cmd_pkt_ {
   cmd_msg msg;
 } cmd_pkt;
 
+typedef struct buffer_data_t_ {
+  uint8_t msg[OPENLST_MAX_PAYLOAD_LEN+PRE_HEADER_LEN];
+} buffer_data_t;
+
+typedef struct buffer_t_ {
+  uint8_t active;
+  uint8_t complete;
+  uint8_t full_len;
+  buffer_data_t pkt;
+} buffer_t;
+
+
 extern uint8_t RF_KILL_KEYS[16];
 extern uint8_t EXPT_WAKE_KEYS[8];
 
@@ -115,4 +130,5 @@ unsigned expt_ack_check(void);
 void expt_write_program();
 void expt_write_jump();
 void expt_set_time(uint8_t *);
+void expt_send_raw(buffer_t* raw_pkt);
 #endif //_LIBARTIBEUS_COMM_H_

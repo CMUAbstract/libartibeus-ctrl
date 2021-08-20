@@ -15,6 +15,7 @@
 
 #include <libio/console.h>
 #include <libmspuartlink/uartlink.h>
+#include "handle_uarts.h"
 #include "comm.h"
 #include "artibeus.h"
 
@@ -102,6 +103,20 @@ void  expt_send_cmd(openlst_cmd *pkt) {
   // annoying
   uartlink_send_basic(LIBMSPUARTLINK1_UART_IDX, &expt_msg, 3 + pkt->cmd_len);
   return;
+}
+
+void expt_send_raw(buffer_t* raw_pkt) {
+  raw_pkt->pkt.msg[0] = 0x22;
+  raw_pkt->pkt.msg[1] = 0x69;
+  raw_pkt->pkt.msg[2] = raw_pkt->full_len;
+  uartlink_send_basic(LIBMSPUARTLINK1_UART_IDX,raw_pkt->pkt.msg,PRE_HEADER_LEN+raw_pkt->full_len);
+}
+
+void comm_send_raw(buffer_t* raw_pkt) {
+  raw_pkt->pkt.msg[0] = 0x22;
+  raw_pkt->pkt.msg[1] = 0x69;
+  raw_pkt->pkt.msg[2] = raw_pkt->full_len;
+  uartlink_send_basic(LIBMSPUARTLINK0_UART_IDX,raw_pkt->pkt.msg,PRE_HEADER_LEN+raw_pkt->full_len);
 }
 
 unsigned comm_ack_check() {
