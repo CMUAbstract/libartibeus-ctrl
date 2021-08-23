@@ -5,12 +5,14 @@
 #include <stdint.h>
 #include <libmsp/mem.h>
 
+// Size definitions for different telemetry components
 #define ARTIBEUS_AVG_IMU_SIZE 3
 #define ARTIBEUS_AVG_PWR_SIZE 4
 #define ARTIBEUS_GPS_SIZE 12
 #define ARTIBEUS_TIME_SIZE 3
 #define ARTIBEUS_IMU_SIZE 9
 #define ARTIBEUS_PWR_SIZE 4
+#define ARTIBEUS_FULL_TELEM_SIZE 41
 
 // Functions for accessing the query-able data
 
@@ -40,7 +42,7 @@ void artibeus_set_pwr(uint16_t*);
 void artibeus_set_gps(uint8_t*);
 // Sets time
 void artibeus_set_time(uint8_t*);
-
-
+// Sets latest telemetry packet and returns pointer
+uint8_t * artibeus_set_telem_pkt(void);
 
 #endif

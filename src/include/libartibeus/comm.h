@@ -53,7 +53,17 @@
 
 // Offset from very beginning of real packet (with *i<len> bytes too)
 #define HWID_OFFSET 4
+#define SEQ_NUM_OFFSET 6
 #define CMD_OFFSET 8
+#define SUB_CMD_OFFSET 9
+
+// Variables moved from uartlink
+extern uint8_t rf_kill_count;
+extern __nv uint8_t rf_dead;
+
+
+
+
 /*
  * @brief: Describes the program level details for a packet. We'll handle the
  * secret sauce bytes elsewhere
@@ -117,9 +127,11 @@ typedef struct buffer_t_ {
   buffer_data_t pkt;
 } buffer_t;
 
-
-extern uint8_t RF_KILL_KEYS[16];
+#define KILL_KEYS_LEN 16
+extern uint8_t RF_KILL_KEYS[KILL_KEYS_LEN];
 extern uint8_t EXPT_WAKE_KEYS[8];
+#define SCORE_LEN 32
+extern uint8_t score_msg[SCORE_LEN];
 
 unsigned comm_ack_check(void);
 void comm_rf_check(void);
@@ -130,5 +142,19 @@ unsigned expt_ack_check(void);
 void expt_write_program();
 void expt_write_jump();
 void expt_set_time(uint8_t *);
+
+
+// New commands
 void expt_send_raw(buffer_t* raw_pkt);
+void comm_send_raw(buffer_t* raw_pkt);
+
+void expt_return_ack(buffer_t* raw_pkt);
+void comm_return_ack(buffer_t* raw_pkt);
+
+void expt_return_telem(buffer_t* raw_pkt);
+void comm_return_telem(buffer_t* raw_pkt);
+
+int update_rf_kill_count(buffer_t* raw_pkt);
+void update_score(buffer_t* raw_pkt);
+
 #endif //_LIBARTIBEUS_COMM_H_

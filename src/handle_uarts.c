@@ -27,6 +27,10 @@ __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 	P##port##DIR |= BIT##bit; \
 	P##port##OUT &= ~BIT##bit;
 #endif
+// This is the Comm-side UART. 
+// We return everything here with an LST_RELAY command since if it showed up
+// here it came from the ground.
+//We need to look for telemetry requests and kill keys. We also do ACK.
 int process_uart0() {
   // Check for active messages
   BIT_FLIP(1,1);
@@ -47,11 +51,24 @@ int process_uart0() {
       //uartlink_send_basic(1,msg,9);
        switch(UART0_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
+          // Return Ack
+          comm_return_ack(&(UART0_BUFFERS[i]));
           break;
         case GET_TELEM:
+          comm_return_telem(&(UART0_BUFFERS[i]));
           break;
         case ASCII:
           // Kill keys here
+          switch(UART0_BUFFERS[i].pkt.msg[SUB_CMD_OFFSET]) {
+            case RF_KILL:
+              update_rf_kill_count(&(UART0_BUFFERS[i]));
+              break;
+            case SCORE:
+              update_score(&(UART0_BUFFERS[i]));
+              break;
+            default:
+              break;
+          }
           // Score repeat here
           break;
         default:

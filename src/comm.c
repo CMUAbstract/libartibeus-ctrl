@@ -18,8 +18,13 @@
 #include "handle_uarts.h"
 #include "comm.h"
 #include "artibeus.h"
+#include "query.h"
 
 #define COMM_TEST_LEN 128
+
+// We want this volatile!!
+uint8_t rf_kill_count = 0;
+__nv uint8_t rf_dead = 0;
 
 static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt comm_resp;
@@ -29,6 +34,7 @@ static cmd_pkt expt_resp;
 
  __nv uint8_t RF_KILL_KEYS[16] ={'S','T','O','P',' ','b','r','o','a','d','C','A','S','T','!','!',};
  __nv uint8_t EXPT_WAKE_KEYS[8] = {'W','a','K','e','U','p','T','A'};
+__nv uint8_t score_msg[32];
 
 int comm_format_pkt(openlst_cmd *cmd) {
   // First things firs,t Size check
@@ -245,7 +251,65 @@ void expt_set_time(uint8_t *time) {
   expt_send_cmd(&time_cmd);
 }
 
-#if 1
+
+void comm_return_ack(buffer_t *raw_pkt) {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = LIBARTIBEUS_COMM_HWID;
+  ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
+  ack_cmd.dest = LST_RELAY;
+  ack_cmd.cmd = ACK;
+  ack_cmd.cmd_len = 0;
+  comm_send_cmd(&ack_cmd);
+}
+
+void expt_return_ack(buffer_t *raw_pkt) {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = LIBARTIBEUS_EXPT_HWID;
+  ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
+  ack_cmd.dest = LST;
+  ack_cmd.cmd = ACK;
+  ack_cmd.cmd_len = 0;
+  expt_send_cmd(&ack_cmd);
+}
+
+void comm_return_telem(buffer_t *raw_pkt) {
+  uint8_t *telem = artibeus_set_telem_pkt();
+  openlst_cmd telem_cmd;
+  telem_cmd.hwid = LIBARTIBEUS_COMM_HWID;
+  telem_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
+  telem_cmd.dest = LST;
+  telem_cmd.cmd = TELEM;
+  telem_cmd.cmd_len = 1 + ARTIBEUS_FULL_TELEM_SIZE;
+  telem_cmd.payload = telem;
+  comm_send_cmd(&telem_cmd);
+}
+
+int update_rf_kill_count(buffer_t *raw_pkt) {
+  int got_key = 1;
+  for (int i = 0; i < KILL_KEYS_LEN; i++) {
+    if (raw_pkt->pkt.msg[SUB_CMD_OFFSET + 1 + i] != RF_KILL_KEYS[i]) {
+      got_key = 0;
+      break;
+    }
+  }
+  if (got_key) {
+    rf_kill_count++;
+  }
+  if (rf_kill_count > MAX_KILL_COUNT) {
+    rf_dead = 1;
+  }
+  return rf_kill_count;
+}
+
+void update_score(buffer_t *raw_pkt) {
+  //TODO need to make this resilient to failures
+  for (int i = 0; i < SCORE_LEN; i++) {
+    score_msg[i] = raw_pkt->pkt.msg[SUB_CMD_OFFSET+1+i];
+  }
+  return;
+}
+
+#if 0
 #define  BYTES_PER_CMD 129
 const uint8_t SUBPAGE_00[BYTES_PER_CMD] = {
  0x00,
@@ -828,6 +892,8 @@ void expt_write_program() {
   uartlink_close(1);
   return;
 }
+
+
 
 #endif
 
