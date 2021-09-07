@@ -16,10 +16,12 @@ __nv int16_t artibeus_last_imu_0[ARTIBEUS_IMU_SIZE] = {0};
 __nv uint16_t artibeus_last_pwr_0[ARTIBEUS_PWR_SIZE] = {0};
 __nv uint8_t artibeus_last_gps_0[ARTIBEUS_GPS_SIZE] = {0};
 __nv uint8_t artibeus_last_time_0[ARTIBEUS_TIME_SIZE] = {0};
+__nv uint8_t artibeus_last_date_0[ARTIBEUS_DATE_SIZE] = {0};
 __nv int16_t artibeus_last_imu_1[ARTIBEUS_IMU_SIZE] = {0};
 __nv uint16_t artibeus_last_pwr_1[ARTIBEUS_PWR_SIZE] = {0};
 __nv uint8_t artibeus_last_gps_1[ARTIBEUS_GPS_SIZE] = {0};
 __nv uint8_t artibeus_last_time_1[ARTIBEUS_TIME_SIZE] = {0};
+__nv uint8_t artibeus_last_date_1[ARTIBEUS_DATE_SIZE] = {0};
 
 
 __nv int16_t *artibeus_last_imu = artibeus_last_imu_0;
@@ -28,8 +30,9 @@ __nv int16_t *artibeus_avg_xl = artibeus_xl_avgs_0;
 __nv int16_t *artibeus_avg_g = artibeus_g_avgs_0;
 __nv int16_t *artibeus_avg_m = artibeus_m_avgs_0;
 __nv uint16_t *artibeus_avg_pwr = artibeus_pwr_avgs_0;
-__nv int8_t *artibeus_gps = artibeus_last_gps_0;
-__nv int8_t *artibeus_time = artibeus_last_time_0;
+__nv uint8_t *artibeus_gps = artibeus_last_gps_0;
+__nv uint8_t *artibeus_time = artibeus_last_time_0;
+__nv uint8_t *artibeus_date = artibeus_last_date_0;
 
 // This is just nv because that's where it'll end up anyway
 __nv uint8_t artibeus_telem_pkt[ARTIBEUS_FULL_TELEM_SIZE];
@@ -61,13 +64,18 @@ uint16_t* artibeus_get_pwr() {
 }
 
 // Returns pointer to latest gps location
-uint16_t* artibeus_get_gps() {
+uint8_t* artibeus_get_gps() {
   return artibeus_gps;
 }
 
 // Returns pointer to latest time
-uint16_t* artibeus_get_time() {
+uint8_t* artibeus_get_time() {
   return artibeus_time;
+}
+
+// Returns pointer to latest date
+uint8_t* artibeus_get_date() {
+  return artibeus_date;
 }
 
 // Sets the latest xl data and updates avg
@@ -203,6 +211,17 @@ void artibeus_set_time(uint8_t* new_val) {
   return;
 }
 
+void artibeus_set_date(uint8_t* new_val) {
+  // Just do a double buffer swap
+  uint8_t *next_buf = (artibeus_date == artibeus_last_date_0) ?
+                      artibeus_last_date_1 : artibeus_last_date_0;
+  for(int i = 0; i < ARTIBEUS_DATE_SIZE; i++) {
+    next_buf[i] = new_val[i];
+  }
+  artibeus_date = next_buf;
+  return;
+}
+
 // Just grabs the latest telemetry data available and updates the full packet
 // TODO fix the bit banging to be less magic-numbery
 // We call this _set_ instead of _get_ even though it returns telemetry because
@@ -236,10 +255,14 @@ uint8_t * artibeus_set_telem_pkt(void) {
   for (int i = 0; i < ARTIBEUS_GPS_SIZE; i++) {
     *((int8_t *)(artibeus_telem_pkt + 26 + i)) = gps[i];
   }
-  // Patch in time
-  int8_t *time = artibeus_get_time();
+  // Patch in time and date
+  uint8_t *time = artibeus_get_time();
+  uint8_t *date = artibeus_get_date();
+  for (int i = 0; i < ARTIBEUS_DATE_SIZE; i++) {
+    *((uint8_t *)(artibeus_telem_pkt + 26 + ARTIBEUS_GPS_SIZE + i)) = date[i];
+  }
   for (int i = 0; i < ARTIBEUS_TIME_SIZE; i++) {
-    *((int8_t *)(artibeus_telem_pkt + 26 + ARTIBEUS_GPS_SIZE + i)) = time[i];
+    *((uint8_t *)(artibeus_telem_pkt + 26 + ARTIBEUS_DATE_SIZE + ARTIBEUS_GPS_SIZE + i)) = time[i];
   }
   return artibeus_telem_pkt;
 }

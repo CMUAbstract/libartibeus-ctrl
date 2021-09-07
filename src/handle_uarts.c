@@ -14,6 +14,7 @@
 
 #include <libio/console.h>
 #include <libmspuartlink/uartlink.h>
+#include <libgnss/gnss.h>
 #include "artibeus.h"
 #include "comm.h"
 #include "handle_uarts.h"
@@ -34,7 +35,6 @@ __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 int process_uart0() {
   // Check for active messages
   BIT_FLIP(1,1);
-  uint8_t msg1[1] = {UART0_BUFFER_CNT + 0x30};
   //uartlink_send_basic(1,msg1,1);
   for (int i = 0; i < UART0_BUFFER_CNT; i++) {
     if (UART0_BUFFERS[i].active == 0 || UART0_BUFFERS[i].complete != COMPLETE) {
@@ -46,8 +46,7 @@ int process_uart0() {
     // TODO change to dest
     if ((uint16_t) UART0_BUFFERS[i].pkt.msg[HWID_OFFSET] == HWID_CTRL) {
       // If it is, process it
-      PRINTF("Got pkt!");
-      char msg[9] = "Got pkt\r\n";
+      LOG("Got pkt!");
       //uartlink_send_basic(1,msg,9);
        switch(UART0_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
@@ -91,21 +90,15 @@ int process_uart0() {
 int process_uart1() {
   // Check for active messages
   BIT_FLIP(1,1);
-  uint8_t msg1[1] = {UART1_BUFFER_CNT + 0x30};
-  //uartlink_send_basic(1,msg1,1);
   for (int i = 0; i < UART1_BUFFER_CNT; i++) {
     if (UART1_BUFFERS[i].active == 0 || UART1_BUFFERS[i].complete != COMPLETE) {
-      //char msg[8] = "No pkt\r\n";
-      //uartlink_send_basic(1,msg,8);
       continue;
     }
     // if there is a message, check if it's for us
     // TODO change to dest
     if ((uint16_t) UART1_BUFFERS[i].pkt.msg[HWID_OFFSET] == HWID_CTRL) {
       // If it is, process it
-      PRINTF("Got pkt!");
-      char msg[9] = "Got pkt\r\n";
-      //uartlink_send_basic(1,msg,9);
+      LOG("Got pkt!");
        switch(UART1_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
           break;
@@ -139,7 +132,7 @@ int handle_progress_uart0(uint8_t data) {
   static incoming_status_t progress;
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
-  static buffer_num = -1;
+  static int buffer_num = -1;
   BIT_FLIP(1,2);
   switch(progress) {
     case wait_esp0: // Waiting for start1
@@ -220,7 +213,7 @@ int handle_progress_uart1(uint8_t data) {
   static incoming_status_t progress;
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
-  static buffer_num = -1;
+  static int buffer_num = -1;
   BIT_FLIP(1,2);
   switch(progress) {
     case wait_esp0: // Waiting for start1
@@ -295,3 +288,58 @@ int handle_progress_uart1(uint8_t data) {
   return 0;
 }
 
+int handle_progress_uart2(uint8_t data) {
+  int pkt_done = 0;
+  int pkt_error = 1;
+  int need_fix = -1;
+  //PRINTF("|got: %u, %c |\r\n",gnss_pkt_counter, data);
+  if (data == '$') {
+    gnss_pkt_counter = 0;
+    pkt_type = IN_PROGRESS;
+    active_pkt = 0;
+    LOG("Starting!\r\n");
+    return pkt_done;
+  }
+  else if (pkt_type == IN_PROGRESS) {
+    // Try to find packet header
+    LOG("finding type\r\n");
+    get_sentence_type(data);
+    return pkt_done;
+  }
+  else if (active_pkt) {
+    LOG("Active pkt!\r\n");
+    pkt_done = get_sentence_pkt(data);
+    if (!pkt_done) {
+      return pkt_done;
+    }
+  }
+  else {
+    return pkt_done;
+  }
+  gps_data *next_gps_data;
+  if (pkt_done) {
+    active_pkt = 0;
+    gnss_pkt_counter = 0;
+    next_gps_data = (cur_gps_data == &gps_data1) ?
+      &gps_data2 : &gps_data1;
+    // Actually a fairly substantial operation...
+    // TODO can we reduce the worst case execution time here somehow?
+    pkt_error = process_sentence_pkt(cur_gnss_ptr, next_gps_data);
+  }
+  if (!pkt_error && next_gps_data->fix[0] == FIX_OK) {
+    //Update latest gps coordinates if time is newer
+    need_fix = 0;
+    int time_temp = time_compare(next_gps_data, cur_gps_data);
+    if ( time_temp >= 0) {
+      cur_gps_data = next_gps_data;
+      LOG("comp: %i\r\n",cur_gps_data->fix[0] == FIX_OK);
+    }
+    else {
+      LOG("No time change!\r\n");
+    }
+  }
+  else {
+    LOG("Pkt error!\r\n");
+  }
+  return pkt_done;
+}
