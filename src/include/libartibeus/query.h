@@ -15,6 +15,14 @@
 #define ARTIBEUS_PWR_SIZE 4
 #define ARTIBEUS_FULL_TELEM_SIZE 44
 
+// Struct defs
+typedef uint8_t artibeus_telem_t[ARTIBEUS_FULL_TELEM_SIZE];
+
+
+// Structures
+extern __nv artibeus_telem_t artibeus_latest_telem_pkt;
+
+
 // Functions for accessing the query-able data
 
 // Returns pointer to latest imu data
@@ -48,6 +56,6 @@ void artibeus_set_time(uint8_t*);
 // Sets date
 void artibeus_set_date(uint8_t*);
 // Sets latest telemetry packet and returns pointer
-uint8_t * artibeus_set_telem_pkt(void);
+uint8_t * artibeus_set_telem_pkt(uint8_t *);
 
 #endif

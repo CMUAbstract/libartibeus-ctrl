@@ -273,7 +273,7 @@ void expt_return_ack(buffer_t *raw_pkt) {
 }
 
 void comm_return_telem(buffer_t *raw_pkt) {
-  uint8_t *telem = artibeus_set_telem_pkt();
+  uint8_t *telem = artibeus_set_telem_pkt(artibeus_latest_telem_pkt);
   openlst_cmd telem_cmd;
   telem_cmd.hwid = LIBARTIBEUS_COMM_HWID;
   telem_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];

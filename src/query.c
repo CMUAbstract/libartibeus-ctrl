@@ -35,7 +35,7 @@ __nv uint8_t *artibeus_time = artibeus_last_time_0;
 __nv uint8_t *artibeus_date = artibeus_last_date_0;
 
 // This is just nv because that's where it'll end up anyway
-__nv uint8_t artibeus_telem_pkt[ARTIBEUS_FULL_TELEM_SIZE];
+__nv uint8_t artibeus_latest_telem_pkt[ARTIBEUS_FULL_TELEM_SIZE];
 
 // Returns pointer to latest imu data
 // The format is xlX,xlY,xlZ,gX,gY,gZ,mX,mY,mZ,
@@ -228,7 +228,7 @@ void artibeus_set_date(uint8_t* new_val) {
 // it updates a single buffer with the latest telemetry values. You need to
 // transmit that buffer atomically with calling this function. So we call it set
 // to confer the idea that you're updating memory.
-uint8_t * artibeus_set_telem_pkt(void) {
+uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt) {
   // Patch in xl
   int16_t *xl = artibeus_get_avg_xl();
   *((int16_t *) (artibeus_telem_pkt + 1)) = xl[0];

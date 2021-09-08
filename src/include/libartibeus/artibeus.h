@@ -85,6 +85,7 @@ typedef enum artibeus_mode_ {
   EXPT,
   XFER,
   RECORD_TELEM,
+  GET_UART0,
   GET_UART1,
   GET_UART2,
   SLEEP
