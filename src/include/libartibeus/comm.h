@@ -14,11 +14,11 @@
 #define CALLSIGN 0x1b
 #define GET_TELEM 0x17
 #define TELEM 0x18
-#define SET_TIME 0x14
 #define SCORE 0x57
 
 #define GET_TIME 0x13
 #define SET_TIME 0x14
+#define SET_TIME_UTC 0x2b
 
 #define BOOTLOADER_PING 0x00
 #define BOOTLOADER_ERASE 0x0c

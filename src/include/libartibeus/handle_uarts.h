@@ -10,5 +10,6 @@ int process_uart0();
 int process_uart1();
 int process_uart2();
 
+extern uint8_t __nv expt_ack_count;
 
 #endif

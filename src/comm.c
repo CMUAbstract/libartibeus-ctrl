@@ -240,14 +240,41 @@ void expt_write_jump() {
   expt_send_cmd(&write_pg_cmd);
 }
 
-void expt_set_time(uint8_t *time) {
+void expt_set_time_utc(uint8_t *time_date) {
+  openlst_cmd time_cmd;
+  time_cmd.hwid = HWID;
+  time_cmd.seqnum = 0x0000;
+  time_cmd.dest = LST;
+  time_cmd.cmd = SET_TIME_UTC;
+  time_cmd.cmd_len = 0x6; // Total of 0xE
+  time_cmd.payload = time_date;
+  expt_send_cmd(&time_cmd);
+}
+
+void expt_set_time(uint8_t *time_date) {
   openlst_cmd time_cmd;
   time_cmd.hwid = HWID;
   time_cmd.seqnum = 0x0000;
   time_cmd.dest = LST;
   time_cmd.cmd = SET_TIME;
+  int32_t year = (int32_t)time_date[2] + 2000;
+  int32_t month = (int32_t)time_date[1];
+  int32_t day = (int32_t)time_date[0];
+
+  int32_t hour = (int32_t)time_date[0];
+  int32_t minute = (int32_t)time_date[1];
+  int32_t second = (int32_t)time_date[2];
+
+  int32_t jd =
+   day-32075+1461*(year+4800+(month-14)/12)/4
+   +367*(month-2-(month-14)/12*12)/12-3
+   *((year+4900+(month-14)/12)/100)/4;
+  int32_t sec =
+   86400*(jd-2451545)+60*(60*hour+minute)+second-43135-1;
+  uint8_t temp_arr[8] = {0};
+  memcpy(temp_arr,&sec,4);
   time_cmd.cmd_len = 0x8; // Total of 0xE
-  time_cmd.payload = time;
+  time_cmd.payload = temp_arr;
   expt_send_cmd(&time_cmd);
 }
 

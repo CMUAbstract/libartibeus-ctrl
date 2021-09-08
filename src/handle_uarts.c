@@ -19,6 +19,9 @@
 #include "comm.h"
 #include "handle_uarts.h"
 
+// Variables we update in these functions
+extern uint8_t __nv expt_ack_count = 0;
+
 __nv buffer_t UART1_BUFFERS[UART1_BUFFER_CNT];
 __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 
@@ -101,6 +104,8 @@ int process_uart1() {
       LOG("Got pkt!");
        switch(UART1_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
+          expt_ack_count++;
+          expt_return_ack(&(UART1_BUFFERS[i]));
           break;
         case GET_TELEM:
           break;
