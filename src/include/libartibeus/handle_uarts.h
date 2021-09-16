@@ -10,6 +10,10 @@ int process_uart0();
 int process_uart1();
 int process_uart2();
 
-extern uint8_t __nv expt_ack_count;
+extern uint16_t __nv expt_msg_id_pending;
+extern uint8_t __nv expt_ack_pending;
+extern uint16_t __nv comm_msg_id_pending;
+extern uint8_t __nv comm_ack_pending;
+extern uint16_t __nv libartibeus_msg_id;
 
 #endif

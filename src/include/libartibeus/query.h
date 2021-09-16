@@ -4,6 +4,7 @@
 #include <msp430.h>
 #include <stdint.h>
 #include <libmsp/mem.h>
+#include "comm.h"
 
 // Size definitions for different telemetry components
 #define ARTIBEUS_AVG_IMU_SIZE 3
@@ -15,16 +16,21 @@
 #define ARTIBEUS_IMU_SIZE 9
 #define ARTIBEUS_PWR_SIZE 4
 #define ARTIBEUS_FULL_TELEM_SIZE 44
+#define ARTIBEUS_MAX_ASCII_SIZE 32
+#define ARTIBEUS_ASCII_ENTRIES 32
 
 // Struct defs
-typedef uint8_t artibeus_telem_t[ARTIBEUS_FULL_TELEM_SIZE];
-
+typedef uint8_t artibeus_telem_t[ARTIBEUS_FULL_TELEM_SIZE+1];
+typedef uint8_t artibeus_ascii_t[ARTIBEUS_MAX_ASCII_SIZE];
 
 // Structures
 extern __nv artibeus_telem_t artibeus_latest_telem_pkt;
-
-
+extern __nv artibeus_ascii_t expt_ascii_buffer[ARTIBEUS_ASCII_ENTRIES];
+extern uint8_t __nv expt_ascii_tail;
 // Functions for accessing the query-able data
+
+/*-----------------------------------------------------*/
+// Safe from power interruptions
 
 // Returns pointer to latest imu data
 int16_t * artibeus_get_imu();
@@ -56,7 +62,25 @@ void artibeus_set_gps(uint8_t*);
 void artibeus_set_time(uint8_t*);
 // Sets date
 void artibeus_set_date(uint8_t*);
+
+
+// Pushes to ascii buffer
+uint8_t artibeus_push_ascii_pkt(buffer_t *buff);
+// Separately updates pointers
+void artibeus_pop_update_ascii_ptrs();
+// Checks if anything is in buffer
+int artibeus_ascii_is_empty();
+/*--------------------------------------------------------*/
+// Not safe from power interruptions
+
 // Sets latest telemetry packet and returns pointer
+// Does *not* double buffer, it's susceptible to atomicity violations if you
+// don't double buffer the pointer you pass in
 uint8_t * artibeus_set_telem_pkt(uint8_t *);
+
+// Pops from ascii buffer
+// Needs to be paired with pop_update_ascii_ptrs to commit change
+uint8_t *artibeus_pop_ascii_pkt();
+
 
 #endif

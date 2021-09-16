@@ -88,6 +88,8 @@ typedef enum artibeus_mode_ {
   GET_UART0,
   GET_UART1,
   GET_UART2,
+  CHECK_GNSS_TIMER,
+  CHECK_ASCII_TIMER,
   SLEEP
 } artibeus_mode;
 

@@ -4,7 +4,9 @@ OBJECTS = \
 	artibeus.o \
   comm.o\
   query.o\
-  handle_uarts.o
+  handle_uarts.o\
+  handle_uarts.o\
+  backup.o\
 
 override SRC_ROOT = ../../src
 

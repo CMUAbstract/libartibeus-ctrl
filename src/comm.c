@@ -1,6 +1,7 @@
 // C file of all the basic artibeus functions
 #include <msp430.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <libmspware/driverlib.h>
 #include <libmspware/gpio.h>
@@ -12,7 +13,6 @@
 #include <libmsp/sleep.h>
 #include <libmsp/mem.h>
 #include <libmsp/uart.h>
-
 #include <libio/console.h>
 #include <libmspuartlink/uartlink.h>
 #include "handle_uarts.h"
@@ -131,7 +131,7 @@ unsigned comm_ack_check() {
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
   //ack_cmd.dest = LST;
-  ack_cmd.dest = LST_RELAY;
+  ack_cmd.dest = FROM_CTRL + DEST_COMM;
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   comm_send_cmd(&ack_cmd);
@@ -151,7 +151,7 @@ unsigned expt_ack_check() {
   ack_cmd.hwid = HWID;
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
-  ack_cmd.dest = LST;
+  ack_cmd.dest = FROM_CTRL + DEST_EXPT;
   ack_cmd.cmd = BOOTLOADER_ACK;
   ack_cmd.cmd_len = 0;
   uartlink_open_tx(1);
@@ -176,7 +176,7 @@ void comm_rf_check() {
   //ack_cmd.hwid = 0x0001;
   //TODO make this a global counter
   ack_cmd.seqnum = 0x0000;
-  ack_cmd.dest = LST_RELAY;
+  ack_cmd.dest = FROM_CTRL + DEST_TERM;
   ack_cmd.cmd = ASCII;
   ack_cmd.cmd_len = COMM_TEST_LEN;
   uint8_t msg_test[COMM_TEST_LEN];
@@ -191,7 +191,7 @@ void comm_rf_check() {
 void comm_transmit_pkt(char *pkt, uint16_t len) {
   openlst_cmd ascii_cmd;
   ascii_cmd.hwid = HWID;
-  ascii_cmd.dest = LST_RELAY;
+  ascii_cmd.dest = FROM_CTRL + DEST_TERM;
   ascii_cmd.cmd = ASCII;
   uint8_t seqnum =0;
   uint16_t index = 0;
@@ -218,7 +218,7 @@ void comm_transmit_ready() {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = HWID;
   ack_cmd.seqnum = 0x0000;
-  ack_cmd.dest = LST_RELAY;
+  ack_cmd.dest = FROM_CTRL + DEST_TERM;
   ack_cmd.cmd = EXPT_LISTENING;
   ack_cmd.cmd_len = 1;
   uint8_t msg_test[1];
@@ -234,7 +234,7 @@ void expt_write_jump() {
   write_pg_cmd.hwid = HWID;
   //TODO make this a global counter
   write_pg_cmd.seqnum = 0x0000;
-  write_pg_cmd.dest = LST;
+  write_pg_cmd.dest = FROM_CTRL + DEST_EXPT;
   write_pg_cmd.cmd = BOOTLOADER_JUMP;
   write_pg_cmd.cmd_len = 0;
   expt_send_cmd(&write_pg_cmd);
@@ -243,8 +243,8 @@ void expt_write_jump() {
 void expt_set_time_utc(uint8_t *time_date) {
   openlst_cmd time_cmd;
   time_cmd.hwid = HWID;
-  time_cmd.seqnum = 0x0000;
-  time_cmd.dest = LST;
+  time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id); 
+  time_cmd.dest = FROM_CTRL & DEST_EXPT;
   time_cmd.cmd = SET_TIME_UTC;
   time_cmd.cmd_len = 0x6; // Total of 0xE
   time_cmd.payload = time_date;
@@ -254,8 +254,9 @@ void expt_set_time_utc(uint8_t *time_date) {
 void expt_set_time(uint8_t *time_date) {
   openlst_cmd time_cmd;
   time_cmd.hwid = HWID;
-  time_cmd.seqnum = 0x0000;
-  time_cmd.dest = LST;
+  // Swap bytes, lsb is first
+  time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id);
+  time_cmd.dest = FROM_CTRL & DEST_EXPT;
   time_cmd.cmd = SET_TIME;
   int32_t year = (int32_t)time_date[2] + 2000;
   int32_t month = (int32_t)time_date[1];
@@ -283,7 +284,7 @@ void comm_return_ack(buffer_t *raw_pkt) {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = LIBARTIBEUS_COMM_HWID;
   ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  ack_cmd.dest = LST_RELAY;
+  ack_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   comm_send_cmd(&ack_cmd);
@@ -293,7 +294,7 @@ void expt_return_ack(buffer_t *raw_pkt) {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = LIBARTIBEUS_EXPT_HWID;
   ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  ack_cmd.dest = LST;
+  ack_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   expt_send_cmd(&ack_cmd);
@@ -304,7 +305,7 @@ void comm_return_telem(buffer_t *raw_pkt) {
   openlst_cmd telem_cmd;
   telem_cmd.hwid = LIBARTIBEUS_COMM_HWID;
   telem_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  telem_cmd.dest = LST;
+  telem_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   telem_cmd.cmd = TELEM;
   telem_cmd.cmd_len = 1 + ARTIBEUS_FULL_TELEM_SIZE;
   telem_cmd.payload = telem;

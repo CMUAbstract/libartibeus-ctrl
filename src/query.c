@@ -1,6 +1,10 @@
 // C file with all of the query-able variable declarations as well as the
 // functions to update those variables and functions to pass off
 #include "query.h"
+#include "comm.h"
+#include "artibeus.h"
+#include "handle_uarts.h"
+#include "backup.h"
 
 // We tack the count on the end of the buffer for convenience
 __nv int16_t artibeus_xl_avgs_0[ARTIBEUS_AVG_IMU_SIZE + 1] = {0};
@@ -35,7 +39,15 @@ __nv uint8_t *artibeus_time = artibeus_last_time_0;
 __nv uint8_t *artibeus_date = artibeus_last_date_0;
 
 // This is just nv because that's where it'll end up anyway
-__nv uint8_t artibeus_latest_telem_pkt[ARTIBEUS_FULL_TELEM_SIZE];
+__nv artibeus_telem_t artibeus_latest_telem_pkt;
+
+// Ring buffer for ascii messages collected from experiment board
+__nv artibeus_ascii_t expt_ascii_buffer[ARTIBEUS_ASCII_ENTRIES];
+__nv uint8_t expt_ascii_tail = 0;
+static __nv uint8_t expt_ascii_head = 0;
+static __nv uint8_t expt_ascii_full = 0;
+
+
 
 // Returns pointer to latest imu data
 // The format is xlX,xlY,xlZ,gX,gY,gZ,mX,mY,mZ,
@@ -228,8 +240,9 @@ void artibeus_set_date(uint8_t* new_val) {
 // it updates a single buffer with the latest telemetry values. You need to
 // transmit that buffer atomically with calling this function. So we call it set
 // to confer the idea that you're updating memory.
-uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt) {
+uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt_in) {
   // Patch in xl
+  uint8_t * artibeus_telem_pkt = artibeus_telem_pkt_in + 1;
   int16_t *xl = artibeus_get_avg_xl();
   *((int16_t *) (artibeus_telem_pkt + 1)) = xl[0];
   *((int16_t *) (artibeus_telem_pkt + 3)) = xl[1];
@@ -266,4 +279,45 @@ uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt) {
   }
   return artibeus_telem_pkt;
 }
+  
+uint8_t artibeus_push_ascii_pkt(buffer_t *buff) {
+  write_to_log(cur_ctx,&expt_ascii_tail,sizeof(uint8_t));
+  write_to_log(cur_ctx,&expt_ascii_head,sizeof(uint8_t));
+  write_to_log(cur_ctx,&expt_ascii_full,sizeof(uint8_t));
+  // Write to buffer
+  uint8_t temp_cnt = expt_ascii_tail;
+  memcpy(expt_ascii_buffer + temp_cnt, buff->pkt.msg + CMD_OFFSET,
+    (buff->pkt.msg[LEN_OFFSET]) - 8);
+  // Update temporary tail
+  temp_cnt++;
+  if (temp_cnt >= ARTIBEUS_ASCII_ENTRIES) {
+    temp_cnt = 0;
+  }
+  // Update full
+  expt_ascii_full = (temp_cnt == expt_ascii_head) ? 1 : 0;
+  // Update tail
+  expt_ascii_tail = temp_cnt;
+  return temp_cnt;
+}
 
+uint8_t * artibeus_pop_ascii_pkt() {
+  // Return pointer to head of ring
+  return &(expt_ascii_buffer[expt_ascii_tail]);
+}
+
+void artibeus_pop_update_ascii_ptrs() {
+  if (expt_ascii_head <= ARTIBEUS_ASCII_ENTRIES - 1) { 
+    expt_ascii_head++;
+  }
+  else {
+    expt_ascii_head = 0;
+  }
+  return;
+}
+
+int artibeus_ascii_is_empty() {
+  if (expt_ascii_tail == expt_ascii_head && expt_ascii_full == 0) {
+    return 1;
+  }
+  return 0;
+}

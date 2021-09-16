@@ -17,10 +17,17 @@
 #include <libgnss/gnss.h>
 #include "artibeus.h"
 #include "comm.h"
+#include "query.h"
 #include "handle_uarts.h"
+#include "backup.h"
 
 // Variables we update in these functions
-extern uint8_t __nv expt_ack_count = 0;
+uint16_t __nv expt_msg_id_pending = 0;
+uint8_t __nv expt_ack_pending = 0;
+uint16_t __nv comm_msg_id_pending = 0;
+uint8_t __nv comm_ack_pending = 0;
+
+uint16_t __nv libartibeus_msg_id = 0;
 
 __nv buffer_t UART1_BUFFERS[UART1_BUFFER_CNT];
 __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
@@ -31,47 +38,61 @@ __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 	P##port##DIR |= BIT##bit; \
 	P##port##OUT &= ~BIT##bit;
 #endif
-// This is the Comm-side UART. 
+// This is the Comm-side UART.
 // We return everything here with an LST_RELAY command since if it showed up
 // here it came from the ground.
 //We need to look for telemetry requests and kill keys. We also do ACK.
 int process_uart0() {
   // Check for active messages
   BIT_FLIP(1,1);
-  //uartlink_send_basic(1,msg1,1);
+  int ret_val = -1;
   for (int i = 0; i < UART0_BUFFER_CNT; i++) {
     if (UART0_BUFFERS[i].active == 0 || UART0_BUFFERS[i].complete != COMPLETE) {
-      //char msg[8] = "No pkt\r\n";
-      //uartlink_send_basic(1,msg,8);
       continue;
     }
+    // Want these updates to be atomic
+    write_to_log(cur_ctx,&(UART0_BUFFERS[i].complete),sizeof(uint8_t));
+    write_to_log(cur_ctx,&(UART0_BUFFERS[i].active),sizeof(uint8_t));
     // if there is a message, check if it's for us
-    // TODO change to dest
-    if ((uint16_t) UART0_BUFFERS[i].pkt.msg[HWID_OFFSET] == HWID_CTRL) {
+    if (GET_TO(UART0_BUFFERS[i].pkt.msg[DEST_OFFSET]) == DEST_CTRL) {
       // If it is, process it
       LOG("Got pkt!");
-      //uartlink_send_basic(1,msg,9);
        switch(UART0_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
+          // Check if this is the responding ack
+          if (comm_ack_pending) {
+            uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART0_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
+            if (cur_seqnum == comm_msg_id_pending) {
+              ret_val = RCVD_PENDING_ACK;
+              break;
+            }
+          }
           // Return Ack
           comm_return_ack(&(UART0_BUFFERS[i]));
+          ret_val =  ACK;
           break;
         case GET_TELEM:
           comm_return_telem(&(UART0_BUFFERS[i]));
+          ret_val =  GET_TELEM;
           break;
         case ASCII:
-          // Kill keys here
           switch(UART0_BUFFERS[i].pkt.msg[SUB_CMD_OFFSET]) {
+            // Kill keys here
             case RF_KILL:
+              // Intentionally leaving unprotected, it's nbd if we have an extra
+              // jump or 2 on the kill count
               update_rf_kill_count(&(UART0_BUFFERS[i]));
               break;
+            // Score repeat here
             case SCORE:
+              // We'll re-run this if it fails, so we'll only have goofed
+              // atomicity for a window that isn't visible
               update_score(&(UART0_BUFFERS[i]));
               break;
             default:
               break;
           }
-          // Score repeat here
+          ret_val =  ASCII;
           break;
         default:
           // Command not supported
@@ -81,37 +102,76 @@ int process_uart0() {
     else {
       EXP_ENABLE;
       // If it's not, send it to the experiment board
+      // Just a write, no atomicity issues
       expt_send_raw(&(UART0_BUFFERS[i]));
       //TODO figure out when to disable
     }
     UART0_BUFFERS[i].complete = 0;
     UART0_BUFFERS[i].active = 0;
   }
-  return 0;
+  return ret_val;
 }
 
 int process_uart1() {
   // Check for active messages
+  int ret_val = -1;
   BIT_FLIP(1,1);
   for (int i = 0; i < UART1_BUFFER_CNT; i++) {
     if (UART1_BUFFERS[i].active == 0 || UART1_BUFFERS[i].complete != COMPLETE) {
       continue;
     }
+    // Want these updates to be atomic
+    write_to_log(cur_ctx,&(UART0_BUFFERS[i].complete),sizeof(uint8_t));
+    write_to_log(cur_ctx,&(UART0_BUFFERS[i].active),sizeof(uint8_t));
     // if there is a message, check if it's for us
-    // TODO change to dest
-    if ((uint16_t) UART1_BUFFERS[i].pkt.msg[HWID_OFFSET] == HWID_CTRL) {
+    if (GET_TO(UART1_BUFFERS[i].pkt.msg[DEST_OFFSET]) == DEST_CTRL) {
       // If it is, process it
       LOG("Got pkt!");
-       switch(UART1_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
+      switch(UART1_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
-          expt_ack_count++;
+          // Check if this is the responding ack
+          if (expt_ack_pending) {
+            uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART0_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
+            if (cur_seqnum == expt_msg_id_pending) {
+              ret_val =  RCVD_PENDING_ACK;
+              break;
+            }
+          }
+          // Return Ack
           expt_return_ack(&(UART1_BUFFERS[i]));
+          ret_val =  ACK;
           break;
         case GET_TELEM:
           break;
-        case ASCII:
-          // Kill keys here
-          // Score repeat here
+        case GET_TIME:{
+          uint8_t* time_date[ARTIBEUS_TIME_DATE_SIZE];
+          uint8_t* time = artibeus_get_time();
+          uint8_t* date = artibeus_get_date();
+          memcpy(time_date,time,3);
+          memcpy(time_date + 3,date,3);
+          libartibeus_msg_id = UART1_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET];
+          expt_set_time(time_date);
+          }
+          ret_val =  GET_TIME;
+          break;
+        case GET_TIME_UTC:{
+          uint8_t* time_date[ARTIBEUS_TIME_DATE_SIZE];
+          uint8_t* time = artibeus_get_time();
+          uint8_t* date = artibeus_get_date();
+          memcpy(time_date,time,3);
+          memcpy(time_date + 3,date,3);
+          libartibeus_msg_id = UART1_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET];
+          expt_set_time_utc(time_date);
+          }
+          ret_val =  GET_TIME;
+          break;
+        case ASCII:{
+          // Push into buffer
+          artibeus_push_ascii_pkt(&UART1_BUFFERS[i].pkt.msg);
+          ret_val = ASCII;
+          }
+          // Put data in ring buffer, export down eventually
+          // Copy all bytes after first 3 bytes into ring buffer
           break;
         default:
           // Command not supported
@@ -127,7 +187,7 @@ int process_uart1() {
     UART1_BUFFERS[i].complete = 1;
     UART1_BUFFERS[i].active = 0;
   }
-  return 0;
+  return ret_val;
 }
 
 // Returns 1 if out of space, 0 if ok
@@ -300,18 +360,18 @@ int handle_progress_uart2(uint8_t data) {
   //PRINTF("|got: %u, %c |\r\n",gnss_pkt_counter, data);
   if (data == '$') {
     gnss_pkt_counter = 0;
-    pkt_type = IN_PROGRESS;
-    active_pkt = 0;
+    gnss_pkt_type = IN_PROGRESS;
+    gnss_active_pkt = 0;
     LOG("Starting!\r\n");
     return pkt_done;
   }
-  else if (pkt_type == IN_PROGRESS) {
+  else if (gnss_pkt_type == IN_PROGRESS) {
     // Try to find packet header
     LOG("finding type\r\n");
     get_sentence_type(data);
     return pkt_done;
   }
-  else if (active_pkt) {
+  else if (gnss_active_pkt) {
     LOG("Active pkt!\r\n");
     pkt_done = get_sentence_pkt(data);
     if (!pkt_done) {
@@ -323,7 +383,7 @@ int handle_progress_uart2(uint8_t data) {
   }
   gps_data *next_gps_data;
   if (pkt_done) {
-    active_pkt = 0;
+    gnss_active_pkt = 0;
     gnss_pkt_counter = 0;
     next_gps_data = (cur_gps_data == &gps_data1) ?
       &gps_data2 : &gps_data1;
