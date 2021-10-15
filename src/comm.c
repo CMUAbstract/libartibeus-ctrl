@@ -244,7 +244,7 @@ void expt_set_time_utc(uint8_t *time_date) {
   openlst_cmd time_cmd;
   time_cmd.hwid = HWID;
   time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id); 
-  time_cmd.dest = FROM_CTRL & DEST_EXPT;
+  time_cmd.dest = FROM_CTRL + DEST_EXPT;
   time_cmd.cmd = SET_TIME_UTC;
   time_cmd.cmd_len = 0x6; // Total of 0xE
   time_cmd.payload = time_date;
@@ -256,7 +256,7 @@ void expt_set_time(uint8_t *time_date) {
   time_cmd.hwid = HWID;
   // Swap bytes, lsb is first
   time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id);
-  time_cmd.dest = FROM_CTRL & DEST_EXPT;
+  time_cmd.dest = FROM_CTRL + DEST_EXPT;
   time_cmd.cmd = SET_TIME;
   int32_t year = (int32_t)time_date[2] + 2000;
   int32_t month = (int32_t)time_date[1];
@@ -284,7 +284,7 @@ void comm_return_ack(buffer_t *raw_pkt) {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = LIBARTIBEUS_COMM_HWID;
   ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  ack_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
+  ack_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   comm_send_cmd(&ack_cmd);
@@ -294,7 +294,7 @@ void expt_return_ack(buffer_t *raw_pkt) {
   openlst_cmd ack_cmd;
   ack_cmd.hwid = LIBARTIBEUS_EXPT_HWID;
   ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  ack_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
+  ack_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   ack_cmd.cmd = ACK;
   ack_cmd.cmd_len = 0;
   expt_send_cmd(&ack_cmd);
@@ -305,7 +305,7 @@ void comm_return_telem(buffer_t *raw_pkt) {
   openlst_cmd telem_cmd;
   telem_cmd.hwid = LIBARTIBEUS_COMM_HWID;
   telem_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
-  telem_cmd.dest = FROM_CTRL & GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
+  telem_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   telem_cmd.cmd = TELEM;
   telem_cmd.cmd_len = 1 + ARTIBEUS_FULL_TELEM_SIZE;
   telem_cmd.payload = telem;
