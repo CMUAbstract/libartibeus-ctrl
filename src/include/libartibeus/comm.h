@@ -85,7 +85,7 @@
 
 // Variables moved from uartlink
 extern uint8_t rf_kill_count;
-extern __nv uint8_t rf_dead;
+extern __nv uint8_t libartibeus_rf_dead;
 
 
 /*

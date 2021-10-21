@@ -24,7 +24,7 @@
 
 // We want this volatile!!
 uint8_t rf_kill_count = 0;
-__nv uint8_t rf_dead = 0;
+__nv uint8_t libartibeus_rf_dead = 0;
 
 static cmd_pkt comm_msg = {.byte0 = ESP_BYTE0, .byte1 = ESP_BYTE1};
 static cmd_pkt comm_resp;
@@ -324,7 +324,7 @@ int update_rf_kill_count(buffer_t *raw_pkt) {
     rf_kill_count++;
   }
   if (rf_kill_count > MAX_KILL_COUNT) {
-    rf_dead = 1;
+    libartibeus_rf_dead = 1;
   }
   return rf_kill_count;
 }

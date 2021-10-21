@@ -38,6 +38,8 @@
 
 #endif // VERSION
 
+#define LIBARTIBEUS_MAGIC_NUMBER 0xABCD
+
 // Couple of definitions to enable/disable the other boards
 #define EXP_ENABLE do{\
   GPIO(LIBARTIBEUS_PORT_EXP_EN, DIR) |= BIT(LIBARTIBEUS_PIN_EXP_EN); \
@@ -53,9 +55,9 @@
 #define GNSS_DISABLE do{\
   GPIO(LIBARTIBEUS_PORT_GNSS_EN, OUT) &= ~BIT(LIBARTIBEUS_PIN_GNSS_EN);} while(0);
 
-#define COMM_ENABLE do{\
+#define COMM_ENABLE if(libartibeus_rf_dead != LIBARTIBEUS_MAGIC_NUMBER){\
   GPIO(LIBARTIBEUS_PORT_COMM_EN, DIR) |= BIT(LIBARTIBEUS_PIN_COMM_EN); \
-  GPIO(LIBARTIBEUS_PORT_COMM_EN, OUT) |= BIT(LIBARTIBEUS_PIN_COMM_EN);} while(0); \
+  GPIO(LIBARTIBEUS_PORT_COMM_EN, OUT) |= BIT(LIBARTIBEUS_PIN_COMM_EN);} \
 
 #define COMM_DISABLE do{\
   GPIO(LIBARTIBEUS_PORT_COMM_EN, OUT) &= ~BIT(LIBARTIBEUS_PIN_COMM_EN);} while(0);
@@ -95,6 +97,5 @@ typedef enum artibeus_mode_ {
 
 void artibeus_init();
 void artibeus_first_init();
-
 
 #endif // _ARTIBEUS_H_
