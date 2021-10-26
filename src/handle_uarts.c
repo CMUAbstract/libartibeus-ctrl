@@ -44,7 +44,6 @@ __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 //We need to look for telemetry requests and kill keys. We also do ACK.
 int process_uart0() {
   // Check for active messages
-  BIT_FLIP(1,1);
   int ret_val = -1;
   for (int i = 0; i < UART0_BUFFER_CNT; i++) {
     if (UART0_BUFFERS[i].active == 0 || UART0_BUFFERS[i].complete != COMPLETE) {
@@ -76,6 +75,7 @@ int process_uart0() {
           ret_val =  GET_TELEM;
           break;
         case ASCII:
+          ret_val =  ASCII;
           switch(UART0_BUFFERS[i].pkt.msg[SUB_CMD_OFFSET]) {
             // Kill keys here
             case RF_KILL:
@@ -89,10 +89,19 @@ int process_uart0() {
               // atomicity for a window that isn't visible
               update_score(&(UART0_BUFFERS[i]));
               break;
+            case TELEM_ASCII:
+              // pops off of the telem stack
+              artibeus_send_telem_ascii_pkt(&(UART0_BUFFERS[i]));
+              ret_val = RCVD_TELEM_ASCII;
+              break;
+            case BUFF_REQ_ASCII:
+              // pops off of special expt data statck
+              artibeus_send_ascii_pkt(&(UART0_BUFFERS[i]));
+              ret_val = RCVD_BUFF_REQ_ASCII;
+              break;
             default:
               break;
           }
-          ret_val =  ASCII;
           break;
         default:
           // Command not supported
@@ -114,10 +123,14 @@ int process_uart0() {
 
 int process_uart1() {
   // Check for active messages
+  //BIT_FLIP(1,1);
   int ret_val = -1;
-  BIT_FLIP(1,1);
   for (int i = 0; i < UART1_BUFFER_CNT; i++) {
+    //BIT_FLIP(1,1);
     if (UART1_BUFFERS[i].active == 0 || UART1_BUFFERS[i].complete != COMPLETE) {
+      BIT_FLIP(1,1);
+      BIT_FLIP(1,1);
+      BIT_FLIP(1,1);
       continue;
     }
     // Want these updates to be atomic
@@ -125,13 +138,14 @@ int process_uart1() {
     write_to_log(cur_ctx,&(UART0_BUFFERS[i].active),sizeof(uint8_t));
     // if there is a message, check if it's for us
     if (GET_TO(UART1_BUFFERS[i].pkt.msg[DEST_OFFSET]) == DEST_CTRL) {
+      //BIT_FLIP(1,1);
       // If it is, process it
       LOG("Got pkt!");
       switch(UART1_BUFFERS[i].pkt.msg[CMD_OFFSET]) {
         case ACK:
           // Check if this is the responding ack
           if (expt_ack_pending) {
-            uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART0_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
+            uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART1_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
             if (cur_seqnum == expt_msg_id_pending) {
               ret_val =  RCVD_PENDING_ACK;
               break;
@@ -164,6 +178,22 @@ int process_uart1() {
           expt_set_time_utc(time_date);
           }
           ret_val =  GET_TIME;
+          break;
+        case BOOTLOADER_ACK:  {
+          if (expt_ack_pending) {
+            BIT_FLIP(1,1);
+            BIT_FLIP(1,1);
+            BIT_FLIP(1,1);
+            BIT_FLIP(1,1);
+            uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART1_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
+            if (cur_seqnum == expt_msg_id_pending) {
+              ret_val =  RCVD_PENDING_BOOTLOADER_ACK;
+              break;
+            }
+          }
+            BIT_FLIP(1,1);
+          
+          }
           break;
         case ASCII:{
           // Push into buffer
@@ -198,11 +228,8 @@ int handle_progress_uart0(uint8_t data) {
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
   static int buffer_num = -1;
-  BIT_FLIP(1,2);
   switch(progress) {
     case wait_esp0: // Waiting for start1
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       prog_counter = 0;
       if (data == ESP_BYTE0) {
         progress = wait_esp1;
@@ -210,9 +237,6 @@ int handle_progress_uart0(uint8_t data) {
       break;
     case wait_esp1: // Waiting for start2
       prog_counter = 0;
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       if (data == ESP_BYTE1) {
         prog_len = 0;
         progress = wait_len;
@@ -221,10 +245,6 @@ int handle_progress_uart0(uint8_t data) {
       }
       break;
     case wait_len:
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       prog_len = data;
       // Give up if packet is too long or too short
       if (prog_len > UARTLINK_MAX_PAYLOAD_SIZE || prog_len < 6) {
@@ -247,11 +267,6 @@ int handle_progress_uart0(uint8_t data) {
       progress = receive_data;
       break;
     case receive_data:
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       buffers[buffer_num].pkt.msg[prog_counter+PRE_HEADER_LEN] = data;
       prog_counter++;
       if (prog_counter >= prog_len) {
@@ -279,21 +294,19 @@ int handle_progress_uart1(uint8_t data) {
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
   static int buffer_num = -1;
-  BIT_FLIP(1,2);
+  BIT_FLIP(1,1);
   switch(progress) {
     case wait_esp0: // Waiting for start1
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
+      BIT_FLIP(1,1);
       prog_counter = 0;
       if (data == ESP_BYTE0) {
         progress = wait_esp1;
       }
       break;
     case wait_esp1: // Waiting for start2
+      BIT_FLIP(1,1);
+      BIT_FLIP(1,1);
       prog_counter = 0;
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       if (data == ESP_BYTE1) {
         prog_len = 0;
         progress = wait_len;
@@ -302,14 +315,16 @@ int handle_progress_uart1(uint8_t data) {
       }
       break;
     case wait_len:
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
+      BIT_FLIP(1,1);
+      BIT_FLIP(1,1);
+      BIT_FLIP(1,1);
       prog_len = data;
+
       // Give up if packet is too long or too short
       if (prog_len > UARTLINK_MAX_PAYLOAD_SIZE || prog_len < 6) {
         progress = wait_esp0;
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,2);
         return 1;
       }
       buffer_num = -1;
@@ -320,6 +335,11 @@ int handle_progress_uart1(uint8_t data) {
       }
       if (buffer_num < 0) {
         // Out of buffers
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
         progress = wait_esp0;
         return 1;
       }
@@ -328,11 +348,6 @@ int handle_progress_uart1(uint8_t data) {
       progress = receive_data;
       break;
     case receive_data:
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
-      BIT_FLIP(1,2);
       buffers[buffer_num].pkt.msg[prog_counter+PRE_HEADER_LEN] = data;
       prog_counter++;
       if (prog_counter >= prog_len) {
@@ -340,6 +355,13 @@ int handle_progress_uart1(uint8_t data) {
         buffers[buffer_num].complete = COMPLETE;
         prog_counter = 0;
         prog_len = 0;
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        BIT_FLIP(1,1);
+        for (int i = 0; i < buffer_num; i++) { BIT_FLIP(1,1); }
         progress = wait_esp0;
       }
       else {

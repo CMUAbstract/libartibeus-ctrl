@@ -14,8 +14,12 @@
 #define CALLSIGN 0x1b
 #define GET_TELEM 0x17
 #define TELEM 0x18
-#define SCORE 0x57
-#define ASCII_TELEM 0x58
+
+
+#define RF_KILL  0xBF
+#define SCORE 0xCF
+#define TELEM_ASCII 0xC8
+#define BUFF_REQ_ASCII 0xC5
 
 #define GET_TIME 0x13
 #define GET_TIME_UTC 0x2a
@@ -32,12 +36,14 @@
 // Commands to tell app what's going on
 // We add an extra 1 to indicate its an internal value
 #define RCVD_PENDING_ACK 0x110
+#define RCVD_PENDING_BOOTLOADER_ACK 0x111
+#define RCVD_TELEM_ASCII 0x112
+#define RCVD_BUFF_REQ_ASCII 0x113
 
 #define EXPT_LISTENING 0x07
 #define EXPT_WAKE 0x27
 #define EXPT_DONE 0x28
 
-#define RF_KILL  0x3F
 
 #define ASCII 0x11
 #define AES_KEY_SIZE 16

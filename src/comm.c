@@ -234,6 +234,7 @@ void expt_write_jump() {
   write_pg_cmd.hwid = HWID;
   //TODO make this a global counter
   write_pg_cmd.seqnum = 0x0000;
+  expt_msg_id_pending = write_pg_cmd.seqnum;
   write_pg_cmd.dest = FROM_CTRL + DEST_EXPT;
   write_pg_cmd.cmd = BOOTLOADER_JUMP;
   write_pg_cmd.cmd_len = 0;
@@ -244,6 +245,7 @@ void expt_set_time_utc(uint8_t *time_date) {
   openlst_cmd time_cmd;
   time_cmd.hwid = HWID;
   time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id); 
+  expt_msg_id_pending = time_cmd.seqnum;
   time_cmd.dest = FROM_CTRL + DEST_EXPT;
   time_cmd.cmd = SET_TIME_UTC;
   time_cmd.cmd_len = 0x6; // Total of 0xE
@@ -256,6 +258,7 @@ void expt_set_time(uint8_t *time_date) {
   time_cmd.hwid = HWID;
   // Swap bytes, lsb is first
   time_cmd.seqnum = TRANSLATE_SEQNUM(libartibeus_msg_id);
+  expt_msg_id_pending = time_cmd.seqnum;
   time_cmd.dest = FROM_CTRL + DEST_EXPT;
   time_cmd.cmd = SET_TIME;
   int32_t year = (int32_t)time_date[2] + 2000;
@@ -279,6 +282,15 @@ void expt_set_time(uint8_t *time_date) {
   expt_send_cmd(&time_cmd);
 }
 
+void comm_return_nack(buffer_t *raw_pkt) {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = LIBARTIBEUS_COMM_HWID;
+  ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
+  ack_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
+  ack_cmd.cmd = NACK;
+  ack_cmd.cmd_len = 0;
+  comm_send_cmd(&ack_cmd);
+}
 
 void comm_return_ack(buffer_t *raw_pkt) {
   openlst_cmd ack_cmd;
@@ -296,6 +308,16 @@ void expt_return_ack(buffer_t *raw_pkt) {
   ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
   ack_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
   ack_cmd.cmd = ACK;
+  ack_cmd.cmd_len = 0;
+  expt_send_cmd(&ack_cmd);
+}
+
+void expt_return_nack(buffer_t *raw_pkt) {
+  openlst_cmd ack_cmd;
+  ack_cmd.hwid = LIBARTIBEUS_EXPT_HWID;
+  ack_cmd.seqnum = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
+  ack_cmd.dest = FROM_CTRL + GET_FROM(raw_pkt->pkt.msg[DEST_OFFSET]);
+  ack_cmd.cmd = NACK;
   ack_cmd.cmd_len = 0;
   expt_send_cmd(&ack_cmd);
 }

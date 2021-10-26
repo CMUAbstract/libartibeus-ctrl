@@ -47,6 +47,10 @@ __nv uint8_t expt_ascii_tail = 0;
 static __nv uint8_t expt_ascii_head = 0;
 static __nv uint8_t expt_ascii_full = 0;
 
+__nv artibeus_telem_t telem_buffer[ARTIBEUS_TELEM_BUFF_SIZE]; 
+__nv uint8_t telem_buffer_tail = 0;
+static __nv uint8_t telem_buffer_head = 0;
+static __nv uint8_t telem_buffer_full = 0;
 
 
 // Returns pointer to latest imu data
@@ -320,4 +324,77 @@ int artibeus_ascii_is_empty() {
     return 1;
   }
   return 0;
+}
+
+void artibeus_send_ascii_pkt(buffer_t *raw_pkt) {
+  // Return nack if empty
+  if (artibeus_ascii_is_empty()) {
+    // Return nack
+    comm_return_nack(raw_pkt);
+  }
+  else { // Else pop packet
+    uint8_t *ascii_ptr = artibeus_pop_ascii_pkt();
+    libartibeus_msg_id = expt_ascii_tail;
+    comm_transmit_pkt(ascii_ptr,ARTIBEUS_MAX_ASCII_SIZE);
+    __delay_cycles(80000);
+    artibeus_pop_update_ascii_ptrs();
+  }
+}
+
+
+uint8_t * artibeus_pop_telem_pkt() {
+  // Return pointer to head of ring
+  return &(telem_buffer[telem_buffer_tail]);
+}
+
+// A function you call _after_ the telemetry packet has definitely been
+// transmitted, as long as there's only one variable, you don't have to double
+// buffer it
+void artibeus_pop_update_telem_ptrs() {
+  if (telem_buffer_head <= ARTIBEUS_TELEM_BUFF_SIZE - 1) { 
+    telem_buffer_head++;
+  }
+  else {
+    telem_buffer_head = 0;
+  }
+}
+
+int artibeus_telem_buffer_is_empty() {
+  if (telem_buffer_tail == telem_buffer_head && telem_buffer_full == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+void artibeus_send_telem_ascii_pkt(buffer_t *raw_pkt) {
+  if (artibeus_telem_buffer_is_empty()) {
+    // return nack
+    comm_return_nack(raw_pkt);
+  }
+  else {
+    uint8_t *telem_ptr = artibeus_pop_telem_pkt();
+    libartibeus_msg_id = telem_buffer_tail;
+    comm_transmit_pkt(telem_ptr,sizeof(artibeus_telem_t) + 1);
+    __delay_cycles(80000); // We'll add a little delay so transmission finishes
+    artibeus_pop_update_telem_ptrs();
+  }
+}
+
+uint8_t artibeus_push_telem_pkt() {
+  write_to_log(cur_ctx,&telem_buffer_tail,sizeof(uint8_t));
+  write_to_log(cur_ctx,&telem_buffer_head,sizeof(uint8_t));
+  write_to_log(cur_ctx,&telem_buffer_full,sizeof(uint8_t));
+  uint8_t temp_cnt = telem_buffer_tail;
+  artibeus_set_telem_pkt(telem_buffer + temp_cnt);
+  // For squishing into an ascii packet instead of a telem packet
+  *((uint8_t *)(telem_buffer + temp_cnt)) = TELEM_ASCII;
+  temp_cnt++;
+  if (temp_cnt >= ARTIBEUS_TELEM_BUFF_SIZE) {
+    temp_cnt = 0;
+  }
+  // Set full flag
+  telem_buffer_full = (temp_cnt == telem_buffer_head) ? 1 : 0;
+  // Update tail
+  telem_buffer_tail = temp_cnt;
+  return temp_cnt;
 }

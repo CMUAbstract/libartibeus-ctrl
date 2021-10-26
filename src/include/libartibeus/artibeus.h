@@ -98,4 +98,11 @@ typedef enum artibeus_mode_ {
 void artibeus_init();
 void artibeus_first_init();
 
+#ifndef BIT_FLIP
+#define BIT_FLIP(port,bit) \
+	P##port##OUT |= BIT##bit; \
+	P##port##DIR |= BIT##bit; \
+	P##port##OUT &= ~BIT##bit;
+#endif
+
 #endif // _ARTIBEUS_H_

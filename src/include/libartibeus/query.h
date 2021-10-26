@@ -18,6 +18,7 @@
 #define ARTIBEUS_FULL_TELEM_SIZE 44
 #define ARTIBEUS_MAX_ASCII_SIZE 258
 #define ARTIBEUS_ASCII_ENTRIES 32
+#define ARTIBEUS_TELEM_BUFF_SIZE 64 // Total size is 2816B (44*64)
 
 // Struct defs
 typedef uint8_t artibeus_telem_t[ARTIBEUS_FULL_TELEM_SIZE+1];
@@ -27,6 +28,8 @@ typedef uint8_t artibeus_ascii_t[ARTIBEUS_MAX_ASCII_SIZE];
 extern __nv artibeus_telem_t artibeus_latest_telem_pkt;
 extern __nv artibeus_ascii_t expt_ascii_buffer[ARTIBEUS_ASCII_ENTRIES];
 extern uint8_t __nv expt_ascii_tail;
+extern uint8_t __nv telem_buffer_tail;
+extern __nv artibeus_telem_t telem_buffer[ARTIBEUS_TELEM_BUFF_SIZE];
 // Functions for accessing the query-able data
 
 /*-----------------------------------------------------*/
@@ -70,6 +73,11 @@ uint8_t artibeus_push_ascii_pkt(buffer_t *buff);
 void artibeus_pop_update_ascii_ptrs();
 // Checks if anything is in buffer
 int artibeus_ascii_is_empty();
+
+// Pushes to telem bfufer
+uint8_t artibeus_push_telem_pkt();
+
+
 /*--------------------------------------------------------*/
 // Not safe from power interruptions
 
