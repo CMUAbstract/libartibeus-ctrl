@@ -29,6 +29,9 @@ uint8_t __nv comm_ack_pending = 0;
 
 uint16_t __nv libartibeus_msg_id = 0;
 
+// Leave volatile
+uint8_t libartibeus_uartlink2_pkt_error = 0;
+
 __nv buffer_t UART1_BUFFERS[UART1_BUFFER_CNT];
 __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 
@@ -128,9 +131,9 @@ int process_uart1() {
   for (int i = 0; i < UART1_BUFFER_CNT; i++) {
     //BIT_FLIP(1,1);
     if (UART1_BUFFERS[i].active == 0 || UART1_BUFFERS[i].complete != COMPLETE) {
-      BIT_FLIP(1,1);
-      BIT_FLIP(1,1);
-      BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
       continue;
     }
     // Want these updates to be atomic
@@ -181,17 +184,17 @@ int process_uart1() {
           break;
         case BOOTLOADER_ACK:  {
           if (expt_ack_pending) {
-            BIT_FLIP(1,1);
-            BIT_FLIP(1,1);
-            BIT_FLIP(1,1);
-            BIT_FLIP(1,1);
+            //BIT_FLIP(1,1);
+            //BIT_FLIP(1,1);
+            //BIT_FLIP(1,1);
+            //BIT_FLIP(1,1);
             uint16_t cur_seqnum = TRANSLATE_SEQNUM(UART1_BUFFERS[i].pkt.msg[SEQ_NUM_OFFSET]);
             if (cur_seqnum == expt_msg_id_pending) {
               ret_val =  RCVD_PENDING_BOOTLOADER_ACK;
               break;
             }
           }
-            BIT_FLIP(1,1);
+            //BIT_FLIP(1,1);
           
           }
           break;
@@ -294,18 +297,18 @@ int handle_progress_uart1(uint8_t data) {
   static uint16_t prog_len = 0;
   static uint8_t prog_counter = 0;
   static int buffer_num = -1;
-  BIT_FLIP(1,1);
+  //BIT_FLIP(1,1);
   switch(progress) {
     case wait_esp0: // Waiting for start1
-      BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
       prog_counter = 0;
       if (data == ESP_BYTE0) {
         progress = wait_esp1;
       }
       break;
     case wait_esp1: // Waiting for start2
-      BIT_FLIP(1,1);
-      BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
       prog_counter = 0;
       if (data == ESP_BYTE1) {
         prog_len = 0;
@@ -315,16 +318,15 @@ int handle_progress_uart1(uint8_t data) {
       }
       break;
     case wait_len:
-      BIT_FLIP(1,1);
-      BIT_FLIP(1,1);
-      BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
+      //BIT_FLIP(1,1);
       prog_len = data;
 
       // Give up if packet is too long or too short
       if (prog_len > UARTLINK_MAX_PAYLOAD_SIZE || prog_len < 6) {
         progress = wait_esp0;
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,2);
+        //BIT_FLIP(1,1);
         return 1;
       }
       buffer_num = -1;
@@ -335,11 +337,11 @@ int handle_progress_uart1(uint8_t data) {
       }
       if (buffer_num < 0) {
         // Out of buffers
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
         progress = wait_esp0;
         return 1;
       }
@@ -355,13 +357,13 @@ int handle_progress_uart1(uint8_t data) {
         buffers[buffer_num].complete = COMPLETE;
         prog_counter = 0;
         prog_len = 0;
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        BIT_FLIP(1,1);
-        for (int i = 0; i < buffer_num; i++) { BIT_FLIP(1,1); }
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //BIT_FLIP(1,1);
+        //for (int i = 0; i < buffer_num; i++) { BIT_FLIP(1,1); }
         progress = wait_esp0;
       }
       else {
@@ -416,6 +418,7 @@ int handle_progress_uart2(uint8_t data) {
   if (!pkt_error && next_gps_data->fix[0] == FIX_OK) {
     //Update latest gps coordinates if time is newer
     need_fix = 0;
+    libartibeus_uartlink2_pkt_error = 0;
     int time_temp = time_compare(next_gps_data, cur_gps_data);
     if ( time_temp >= 0) {
       cur_gps_data = next_gps_data;
@@ -426,7 +429,11 @@ int handle_progress_uart2(uint8_t data) {
     }
   }
   else {
+    BIT_FLIP(1,2);
+    BIT_FLIP(1,1);
+    BIT_FLIP(1,2);
     LOG("Pkt error!\r\n");
+    libartibeus_uartlink2_pkt_error = 1;
   }
   return pkt_done;
 }

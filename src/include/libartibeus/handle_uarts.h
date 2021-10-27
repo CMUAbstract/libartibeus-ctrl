@@ -15,5 +15,7 @@ extern uint8_t __nv expt_ack_pending;
 extern uint16_t __nv comm_msg_id_pending;
 extern uint8_t __nv comm_ack_pending;
 extern uint16_t __nv libartibeus_msg_id;
+// Leave volatile
+extern uint8_t libartibeus_uartlink2_pkt_error;
 
 #endif

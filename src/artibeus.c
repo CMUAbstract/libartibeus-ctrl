@@ -27,7 +27,7 @@ EUSCI_B_I2C_initMasterParam params = {
 
 
 void artibeus_init() {
-#ifdef CONFIG_WATCHDOG
+#ifdef LIBARTIBEUS_CONFIG_WATCHDOG
   msp_watchdog_enable(CONFIG_WDT_BITS);
 #else
   msp_watchdog_disable();
@@ -74,7 +74,7 @@ static void artibeus_burn_wire() {
 
 
 void artibeus_first_init() {
-#ifdef CONFIG_WATCHDOG
+#ifdef LIBARTIBEUS_CONFIG_WATCHDOG
   msp_watchdog_enable(CONFIG_WDT_BITS);
 #else
   msp_watchdog_disable();

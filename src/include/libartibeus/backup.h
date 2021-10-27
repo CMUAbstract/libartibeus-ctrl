@@ -12,7 +12,7 @@
 
 #include <libartibeus/artibeus.h>
 
-#define DBL_BUFF_LEN 10
+#define DBL_BUFF_LEN 16
 #define BACKUP_DATA_LEN 128
 
 
