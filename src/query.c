@@ -102,9 +102,13 @@ void artibeus_set_xl(int16_t x, int16_t y, int16_t z) {
   next_buf[0] = x; next_buf[1] = y; next_buf[2] = z;
   artibeus_last_imu = next_buf;
   // We'll do a rolling average here,
+  // TODO we're taking over the rolling average, need to put it back in
+  // correctly
   next_buf = (artibeus_avg_xl == artibeus_xl_avgs_0) ? 
              artibeus_xl_avgs_1 : artibeus_xl_avgs_0;
-  uint16_t count = (uint16_t)artibeus_avg_xl[ARTIBEUS_IMU_SIZE];
+  next_buf[0] = x; next_buf[1] = y; next_buf[2] = z;
+#if 0
+  uint16_t count = (uint16_t)artibeus_avg_xl[ARTIBEUS_AVG_IMU_SIZE];
   // (Old val * count + new_val)/(count + 1)
   int16_t new_val = (artibeus_avg_xl[0] * count + x)/(count + 1);
   // update other buffer
@@ -115,7 +119,8 @@ void artibeus_set_xl(int16_t x, int16_t y, int16_t z) {
   next_buf[2] = new_val;
   // Update count in buffer
   next_buf[ARTIBEUS_AVG_IMU_SIZE] = count + 1;
-  // When finished, switch buffer
+   When finished, switch buffer
+#endif
   artibeus_avg_xl = next_buf;
 }
 
@@ -127,9 +132,12 @@ void artibeus_set_g(int16_t x, int16_t y, int16_t z) {
   next_buf[3] = x; next_buf[4] = y; next_buf[5] = z;
   artibeus_last_imu = next_buf;
   // We'll do a rolling average here,
+  // TODO not taking average right now
   next_buf = (artibeus_avg_g == artibeus_g_avgs_0) ? 
              artibeus_g_avgs_1 : artibeus_g_avgs_0;
-  uint16_t count = (uint16_t)artibeus_avg_g[ARTIBEUS_IMU_SIZE];
+  next_buf[0] = x; next_buf[1] = y; next_buf[2] = z;
+#if 0
+  uint16_t count = (uint16_t)artibeus_avg_g[ARTIBEUS_AVG_IMU_SIZE];
   // (Old val * count + new_val)/(count + 1)
   int16_t new_val = (artibeus_avg_g[0] * count + x)/(count + 1);
   // update other buffer
@@ -141,6 +149,7 @@ void artibeus_set_g(int16_t x, int16_t y, int16_t z) {
   // Update count in buffer
   next_buf[ARTIBEUS_AVG_IMU_SIZE] = count + 1;
   // When finished, switch buffer
+#endif
   artibeus_avg_g = next_buf;
 }
 
@@ -152,11 +161,14 @@ void artibeus_set_m(int16_t x, int16_t y, int16_t z) {
   next_buf[6] = x; next_buf[7] = y; next_buf[8] = z;
   artibeus_last_imu = next_buf;
   // We'll do a rolling average here,
+  // TODO we're not actually putting an average in here
   next_buf = (artibeus_avg_m == artibeus_m_avgs_0) ? 
              artibeus_m_avgs_1 : artibeus_m_avgs_0;
-  uint16_t count = (uint16_t)artibeus_avg_m[ARTIBEUS_IMU_SIZE];
+  uint16_t count = (uint16_t)artibeus_avg_m[ARTIBEUS_AVG_IMU_SIZE];
   // (Old val * count + new_val)/(count + 1)
   int16_t new_val = (artibeus_avg_m[0] * count + x)/(count + 1);
+  next_buf[0] = x; next_buf[1] = y; next_buf[2] = z;
+#if 0
   // update other buffer
   next_buf[0] = new_val;
   new_val = (artibeus_avg_m[1] * count + y)/(count + 1);
@@ -166,6 +178,7 @@ void artibeus_set_m(int16_t x, int16_t y, int16_t z) {
   // Update count in buffer
   next_buf[ARTIBEUS_AVG_IMU_SIZE] = count + 1;
   // When finished, switch buffer
+#endif
   artibeus_avg_m = next_buf;
 }
 
@@ -344,7 +357,7 @@ void artibeus_send_ascii_pkt(buffer_t *raw_pkt) {
 
 uint8_t * artibeus_pop_telem_pkt() {
   // Return pointer to head of ring
-  return &(telem_buffer[telem_buffer_tail]);
+  return &(telem_buffer[telem_buffer_tail-1]);
 }
 
 // A function you call _after_ the telemetry packet has definitely been
@@ -372,6 +385,9 @@ void artibeus_send_telem_ascii_pkt(buffer_t *raw_pkt) {
     comm_return_nack(raw_pkt);
   }
   else {
+  BIT_FLIP(1,2);
+  BIT_FLIP(1,1);
+  BIT_FLIP(1,2);
     uint8_t *telem_ptr = artibeus_pop_telem_pkt();
     libartibeus_msg_id = telem_buffer_tail;
     comm_transmit_pkt(telem_ptr,sizeof(artibeus_telem_t) + 1);

@@ -32,7 +32,7 @@ int write_to_log(artibeus_ctx *ctx, uint8_t *data, size_t len) {
   if (index > DBL_BUFF_LEN) {
     return -1;
   }
-  PRINTF("Writing! %i, len = %i\r\n", *data, len);
+  //PRINTF("Writing! %i, len = %i\r\n", *data, len);
   // Get address of last entry in buffer
   uint8_t *last_addr;
   if (index > 0) {

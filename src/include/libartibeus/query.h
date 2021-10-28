@@ -7,6 +7,9 @@
 #include "comm.h"
 
 // Size definitions for different telemetry components
+#define ARTIBEUS_XL_OFFSET 0
+#define ARTIBEUS_G_OFFSET 3
+#define ARTIBEUS_M_OFFSET 3
 #define ARTIBEUS_AVG_IMU_SIZE 3
 #define ARTIBEUS_AVG_PWR_SIZE 4
 #define ARTIBEUS_GPS_SIZE 12
