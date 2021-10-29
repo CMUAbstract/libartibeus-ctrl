@@ -263,29 +263,29 @@ uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt_in) {
   // Patch in xl
   uint8_t * artibeus_telem_pkt = artibeus_telem_pkt_in + 1;
   int16_t *xl = artibeus_get_avg_xl();
-  *((int16_t *) (artibeus_telem_pkt + 1)) = xl[0];
-  *((int16_t *) (artibeus_telem_pkt + 3)) = xl[1];
-  *((int16_t *) (artibeus_telem_pkt + 5)) = xl[2];
+  *((int16_t *) (artibeus_telem_pkt + 0)) = xl[0];
+  *((int16_t *) (artibeus_telem_pkt + 2)) = xl[1];
+  *((int16_t *) (artibeus_telem_pkt + 4)) = xl[2];
   // Patch in g
   int16_t *g = artibeus_get_avg_g();
-  *((int16_t *) (artibeus_telem_pkt + 7)) = g[0];
-  *((int16_t *) (artibeus_telem_pkt + 9)) = g[1];
-  *((int16_t *) (artibeus_telem_pkt + 11)) = g[2];
+  *((int16_t *) (artibeus_telem_pkt + 6)) = g[0];
+  *((int16_t *) (artibeus_telem_pkt + 8)) = g[1];
+  *((int16_t *) (artibeus_telem_pkt + 10)) = g[2];
   // Patch in m
   int16_t *m = artibeus_get_avg_m();
-  *((int16_t *) (artibeus_telem_pkt + 13)) = m[0];
-  *((int16_t *) (artibeus_telem_pkt + 15)) = m[1];
-  *((int16_t *) (artibeus_telem_pkt + 17)) = m[2];
+  *((int16_t *) (artibeus_telem_pkt + 12)) = m[0];
+  *((int16_t *) (artibeus_telem_pkt + 14)) = m[1];
+  *((int16_t *) (artibeus_telem_pkt + 16)) = m[2];
   // Patch in pwr data
   uint16_t *pwr = artibeus_get_pwr();
-  *((uint16_t *) (artibeus_telem_pkt + 19)) = pwr[0];
-  *((uint16_t *) (artibeus_telem_pkt + 21)) = pwr[1];
-  *((uint16_t *) (artibeus_telem_pkt + 23)) = pwr[2];
-  *((uint16_t *) (artibeus_telem_pkt + 25)) = pwr[3];
+  *((uint16_t *) (artibeus_telem_pkt + 18)) = pwr[0];
+  *((uint16_t *) (artibeus_telem_pkt + 20)) = pwr[1];
+  *((uint16_t *) (artibeus_telem_pkt + 22)) = pwr[2];
+  *((uint16_t *) (artibeus_telem_pkt + 24)) = pwr[3];
   // Patch in gps data
-  int8_t *gps = artibeus_get_gps();
+  uint8_t *gps = artibeus_get_gps();
   for (int i = 0; i < ARTIBEUS_GPS_SIZE; i++) {
-    *((int8_t *)(artibeus_telem_pkt + 26 + i)) = gps[i];
+    *((uint8_t *)(artibeus_telem_pkt + 26 + i)) = gps[i];
   }
   // Patch in time and date
   uint8_t *time = artibeus_get_time();
