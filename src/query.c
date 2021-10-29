@@ -76,7 +76,7 @@ int16_t * artibeus_get_avg_m() {
 
 // Returns pointer to latest power data
 uint16_t* artibeus_get_pwr() {
-  return artibeus_avg_pwr;
+  return artibeus_last_pwr;
 }
 
 // Returns pointer to latest gps location
@@ -185,17 +185,18 @@ void artibeus_set_m(int16_t x, int16_t y, int16_t z) {
 // Sets the latest power data and updates avg
 void artibeus_set_pwr(uint16_t *pwr_vals) {
   // Update latest g values and swap buffer
-  int16_t *next_buf = (artibeus_last_pwr == artibeus_last_pwr_0) ?
+  uint16_t *next_buf = (artibeus_last_pwr == artibeus_last_pwr_0) ?
                       artibeus_last_pwr_1 : artibeus_last_pwr_0;
-  // Current set up is vcap, vcap deriv., power in, power in deriv.
-  int16_t vcap_der = pwr_vals[0] - artibeus_last_pwr[0];
-  int16_t hrv_der = pwr_vals[2] - artibeus_last_pwr[2];
+  // Current set up is power in, power in deriv., vcap, vcap deriv.
+  uint16_t hrv_der = pwr_vals[0] - artibeus_last_pwr[0];
+  uint16_t vcap_der = pwr_vals[3] - artibeus_last_pwr[2];
   next_buf[0] = pwr_vals[0];
-  next_buf[1] = vcap_der;
-  next_buf[2] = pwr_vals[2];
-  next_buf[3] = hrv_der;
+  next_buf[1] = hrv_der;
+  next_buf[2] = pwr_vals[3];
+  next_buf[3] = vcap_der;
   artibeus_last_pwr = next_buf;
   // We'll do a rolling average here,
+#if 0
   next_buf = (artibeus_avg_pwr == artibeus_pwr_avgs_0) ? 
              artibeus_pwr_avgs_1 : artibeus_pwr_avgs_0;
   //TODO do something with this casting
@@ -213,6 +214,7 @@ void artibeus_set_pwr(uint16_t *pwr_vals) {
   // Update count in buffer
   next_buf[ARTIBEUS_AVG_PWR_SIZE] = count + 1;
   // When finished, switch buffer
+#endif
   artibeus_avg_pwr = next_buf;
 }
 
