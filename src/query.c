@@ -298,15 +298,20 @@ uint8_t * artibeus_set_telem_pkt(uint8_t *artibeus_telem_pkt_in) {
   }
   return artibeus_telem_pkt;
 }
-  
+
 uint8_t artibeus_push_ascii_pkt(buffer_t *buff) {
   write_to_log(cur_ctx,&expt_ascii_tail,sizeof(uint8_t));
   write_to_log(cur_ctx,&expt_ascii_head,sizeof(uint8_t));
   write_to_log(cur_ctx,&expt_ascii_full,sizeof(uint8_t));
   // Write to buffer
+  BIT_FLIP(1,2);
+  BIT_FLIP(1,1);
+  BIT_FLIP(1,2);
+  BIT_FLIP(1,2);
+  BIT_FLIP(1,1);
+  BIT_FLIP(1,2);
   uint8_t temp_cnt = expt_ascii_tail;
-  memcpy(expt_ascii_buffer + temp_cnt, buff->pkt.msg + CMD_OFFSET,
-    (buff->pkt.msg[LEN_OFFSET]) - 8);
+  memcpy(&(expt_ascii_buffer[temp_cnt]), buff->pkt.msg + 6, ARTIBEUS_MAX_ASCII_SIZE);
   // Update temporary tail
   temp_cnt++;
   if (temp_cnt >= ARTIBEUS_ASCII_ENTRIES) {
@@ -321,7 +326,7 @@ uint8_t artibeus_push_ascii_pkt(buffer_t *buff) {
 
 uint8_t * artibeus_pop_ascii_pkt() {
   // Return pointer to head of ring
-  return &(expt_ascii_buffer[expt_ascii_tail]);
+  return &(expt_ascii_buffer[expt_ascii_head]);
 }
 
 void artibeus_pop_update_ascii_ptrs() {
@@ -348,8 +353,12 @@ void artibeus_send_ascii_pkt(buffer_t *raw_pkt) {
     comm_return_nack(raw_pkt);
   }
   else { // Else pop packet
+    BIT_FLIP(1,1);
+    BIT_FLIP(1,2);
+    BIT_FLIP(1,2);
+    BIT_FLIP(1,1);
     uint8_t *ascii_ptr = artibeus_pop_ascii_pkt();
-    libartibeus_msg_id = expt_ascii_tail;
+    libartibeus_msg_id = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
     comm_transmit_pkt(ascii_ptr,ARTIBEUS_MAX_ASCII_SIZE);
     __delay_cycles(80000);
     artibeus_pop_update_ascii_ptrs();
@@ -359,7 +368,7 @@ void artibeus_send_ascii_pkt(buffer_t *raw_pkt) {
 
 uint8_t * artibeus_pop_telem_pkt() {
   // Return pointer to head of ring
-  return &(telem_buffer[telem_buffer_tail-1]);
+  return &(telem_buffer[telem_buffer_head]);
 }
 
 // A function you call _after_ the telemetry packet has definitely been
@@ -391,7 +400,7 @@ void artibeus_send_telem_ascii_pkt(buffer_t *raw_pkt) {
   BIT_FLIP(1,1);
   BIT_FLIP(1,2);
     uint8_t *telem_ptr = artibeus_pop_telem_pkt();
-    libartibeus_msg_id = telem_buffer_tail;
+    libartibeus_msg_id = raw_pkt->pkt.msg[SEQ_NUM_OFFSET];
     comm_transmit_pkt(telem_ptr,sizeof(artibeus_telem_t) + 1);
     __delay_cycles(80000); // We'll add a little delay so transmission finishes
     artibeus_pop_update_telem_ptrs();

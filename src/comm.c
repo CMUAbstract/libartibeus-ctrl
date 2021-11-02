@@ -39,6 +39,11 @@ __nv uint8_t score_msg[32];
 int comm_format_pkt(openlst_cmd *cmd) {
   // First things firs,t Size check
   if (cmd->cmd_len + sizeof(cmd_header) > OPENLST_MAX_PAYLOAD_LEN) {
+    BIT_FLIP(1,2);    
+    BIT_FLIP(1,2);    
+    BIT_FLIP(1,2);    
+    BIT_FLIP(1,2);    
+    BIT_FLIP(1,2);    
     return -1;
   }
   // Set len-- we add 6 bytes to the cmd_len to factor in the hwid, etc
@@ -193,10 +198,13 @@ void comm_transmit_pkt(char *pkt, uint16_t len) {
   ascii_cmd.hwid = HWID;
   ascii_cmd.dest = FROM_CTRL + DEST_TERM;
   ascii_cmd.cmd = ASCII;
-  uint8_t seqnum =0;
+  uint8_t seqnum =libartibeus_msg_id;
   uint16_t index = 0;
+  // TODO are we ending up in this???
   while(len > OPENLST_MAX_PAYLOAD_LEN) {
     // Pet watchdog
+    BIT_FLIP(1,1);
+    BIT_FLIP(1,1);
     msp_watchdog_kick();
     ascii_cmd.seqnum = seqnum;
     ascii_cmd.cmd_len = OPENLST_MAX_PAYLOAD_LEN ;
@@ -208,8 +216,9 @@ void comm_transmit_pkt(char *pkt, uint16_t len) {
   }
   ascii_cmd.seqnum = seqnum;
   ascii_cmd.cmd_len = len;
-  ascii_cmd.payload = pkt + index; 
+  ascii_cmd.payload = pkt + index;
   comm_send_cmd(&ascii_cmd);
+  libartibeus_msg_id = 0;
   return;
 }
 

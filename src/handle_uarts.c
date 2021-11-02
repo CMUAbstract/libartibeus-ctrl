@@ -98,6 +98,10 @@ int process_uart0() {
               ret_val = RCVD_TELEM_ASCII;
               break;
             case BUFF_REQ_ASCII:
+              BIT_FLIP(1,1);
+              BIT_FLIP(1,1);
+              BIT_FLIP(1,1);
+              BIT_FLIP(1,1);
               // pops off of special expt data statck
               artibeus_send_ascii_pkt(&(UART0_BUFFERS[i]));
               ret_val = RCVD_BUFF_REQ_ASCII;
@@ -131,9 +135,6 @@ int process_uart1() {
   for (int i = 0; i < UART1_BUFFER_CNT; i++) {
     //BIT_FLIP(1,1);
     if (UART1_BUFFERS[i].active == 0 || UART1_BUFFERS[i].complete != COMPLETE) {
-      //BIT_FLIP(1,1);
-      //BIT_FLIP(1,1);
-      //BIT_FLIP(1,1);
       continue;
     }
     // Want these updates to be atomic
@@ -194,8 +195,6 @@ int process_uart1() {
               break;
             }
           }
-            //BIT_FLIP(1,1);
-          
           }
           break;
         case ASCII:{
