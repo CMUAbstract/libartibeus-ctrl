@@ -58,12 +58,15 @@ void artibeus_init() {
 }
 
 static __nv uint8_t libartibeus_done_burn = 0;
+static __nv uint8_t libartibeus_attempt_count = 0;
 
 static void artibeus_burn_wire() {
-  if (libartibeus_done_burn) {
+  if (libartibeus_done_burn || libartibeus_attempt_count > 2) {
+    libartibeus_done_burn = 1;
     return;
   }
   //LOG("Starting burn for real!\r\n");
+  libartibeus_attempt_count++;
   GPIO(LIBARTIBEUS_PORT_BURN_WIRE, DIR) |= BIT(LIBARTIBEUS_PIN_BURN_WIRE);
   GPIO(LIBARTIBEUS_PORT_BURN_WIRE, OUT) |= BIT(LIBARTIBEUS_PIN_BURN_WIRE);
   __delay_cycles(LIBARTIBEUS_BURN_WIRE_CYCLES);
