@@ -41,6 +41,9 @@ __nv buffer_t UART0_BUFFERS[UART0_BUFFER_CNT];
 	P##port##DIR |= BIT##bit; \
 	P##port##OUT &= ~BIT##bit;
 #endif
+
+
+//---> FUNCTIONS THAT ARE CALLED "SYNCHRONOUSLY" IN THE TOP LEVEL APP TO DO PACKET PROCESSING <---//
 // This is the Comm-side UART.
 // We return everything here with an LST_RELAY command since if it showed up
 // here it came from the ground.
@@ -223,6 +226,7 @@ int process_uart1() {
   return ret_val;
 }
 
+//---> FUNCTIONS THAT ARE CALLED ASYNCHRONOUSLY TO DO BYTE BY BYTE PROCESSING IN THE ISR <---//
 // Returns 1 if out of space, 0 if ok
 int handle_progress_uart0(uint8_t data) {
   uint8_t buffer_cnt = UART0_BUFFER_CNT;
